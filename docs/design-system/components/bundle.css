@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap');
+
+body { margin: 0; font-family: var(--font-sans, Inter, system-ui, sans-serif); background: var(--surface, #ffffff); color: var(--ink, #15213b); font-size: 14px; line-height: 22px; }
+.fp-pad { padding: var(--space-4, 16px); }
+.fp-row { display: flex; flex-wrap: wrap; gap: var(--space-3, 12px); align-items: center; }
+.fp-stack { display: flex; flex-direction: column; gap: var(--space-3, 12px); }
+.fp-caption { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted, #4a5468); }
+.fp-mono { font-family: var(--font-mono, "IBM Plex Mono", monospace); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted, #4a5468); }
+.fp-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Focus: one solid teal ring everywhere, 5.5:1 on surface */
+:focus-visible { outline: 2px solid var(--primary, #0f766e); outline-offset: 2px; }
+
+/* Logo — B2: the P under a mint lens. Sized by font-size. */
+.fp-logo { display: inline-flex; align-items: center; font-weight: 800; letter-spacing: -0.035em; line-height: 1; white-space: nowrap; color: var(--ink, #15213b); }
+.fp-logo-p { position: relative; display: inline-block; margin: 0 0.25em 0 0.52em; }
+.fp-logo-mark .fp-logo-p { margin: 0.3em; }
+.fp-logo-p svg { position: absolute; width: 1.5625em; height: 1.5625em; left: calc(50% - 0.625em); top: calc(50% - 0.625em); overflow: visible; }
+.fp-logo-p span { position: relative; }
+.fp-lens { fill: var(--mint, #b4f1da); stroke: var(--ink, #15213b); }
+.fp-lens-handle { stroke: var(--ink, #15213b); }
+
+/* Status tags — tone colors over antd Tag; icon + word, never color alone */
+.fp-tag.ant-tag { display: inline-flex; align-items: center; gap: var(--space-1, 4px); margin: 0; border: 0; border-radius: var(--radius-sm, 4px); padding: 2px 8px; font-size: 12px; line-height: 16px; font-weight: 600; }
+.fp-tag svg { flex: none; }
+.fp-tone-critical.ant-tag { background: var(--critical-soft, #fef3f2); color: var(--critical, #b42318); }
+.fp-tone-warning.ant-tag { background: var(--warning-soft, #fffaeb); color: var(--warning, #b54708); }
+.fp-tone-success.ant-tag { background: var(--success-soft, #ecfdf3); color: var(--success, #067647); }
+.fp-tone-neutral.ant-tag { background: var(--surface-subtle, #f6f7f9); color: var(--ink-muted, #4a5468); }
+.fp-tone-primary.ant-tag { background: var(--primary-soft, #e6f4f1); color: var(--primary, #0f766e); }
+
+/* Number badge — ties a finding to its box on the ad */
+.fp-num { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; border-radius: var(--radius-full, 9999px); background: var(--ink, #15213b); color: #ffffff; font-size: 12px; font-weight: 700; line-height: 1; }
+
+/* Checks summary */
+.fp-counts { display: flex; flex-wrap: wrap; gap: var(--space-4, 16px); }
+.fp-count { display: inline-flex; align-items: center; gap: var(--space-2, 8px); font-weight: 600; }
+.fp-count b { font-size: 20px; line-height: 28px; font-weight: 700; }
+.fp-count-critical { color: var(--critical, #b42318); }
+.fp-count-warning { color: var(--warning, #b54708); }
+.fp-count-success { color: var(--success, #067647); }
+.fp-passed-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+.fp-passed-list li { display: flex; gap: var(--space-2, 8px); align-items: center; color: var(--ink, #15213b); }
+.fp-passed-list svg { color: var(--success, #067647); flex: none; }
+
+/* Queue item */
+.fp-queue { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2, 8px); }
+.fp-qi { width: 100%; display: flex; align-items: center; gap: var(--space-3, 12px); text-align: left; font: inherit; color: inherit; background: var(--surface, #ffffff); border: 1px solid var(--line, #e3e6ec); border-radius: var(--radius-lg, 12px); padding: var(--space-3, 12px); cursor: pointer; min-height: 64px; }
+.fp-qi:hover { border-color: var(--line-strong, #8a93a6); }
+.fp-qi[aria-current="true"] { background: var(--primary-soft, #e6f4f1); border-color: var(--primary, #0f766e); box-shadow: var(--shadow-card, 0 1px 2px #15213b14); }
+.fp-qi-thumb { flex: none; width: 44px; height: 44px; border-radius: var(--radius-md, 8px); background: var(--surface-subtle, #f6f7f9); border: 1px solid var(--line, #e3e6ec); display: flex; align-items: center; justify-content: center; color: var(--ink-muted, #4a5468); overflow: hidden; }
+.fp-qi-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.fp-qi-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fp-qi-titlerow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.fp-qi-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.fp-qi-ver { flex: none; font-family: var(--font-mono, "IBM Plex Mono", monospace); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-muted, #4a5468); }
+.fp-qi-chip { flex: none; font-size: 12px; line-height: 18px; font-weight: 600; color: var(--ink-muted, #4a5468); border: 1px solid var(--line-strong, #8a93a6); border-radius: var(--radius-sm, 4px); padding: 0 6px; }
+.fp-qi-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.fp-qi-due[data-overdue="true"] { color: var(--critical, #b42318); }
+
+/* Ad review — the image with numbered highlight boxes */
+.fp-ad { position: relative; display: inline-block; border: 1px solid var(--line, #e3e6ec); border-radius: var(--radius-lg, 12px); overflow: hidden; background: var(--surface, #ffffff); box-shadow: var(--shadow-card, 0 1px 2px #15213b14); line-height: 0; }
+.fp-ad img { display: block; width: 100%; height: auto; }
+/* Light fill only: the reviewer must still judge the ad's real colors and contrast */
+.fp-box { position: absolute; padding: 0; border: 2px solid var(--highlight-outline, #15213b); border-radius: var(--radius-sm, 4px); background: rgba(255, 224, 138, 0.12); box-shadow: 0 0 0 2px #ffffff; cursor: pointer; }
+.fp-box[aria-pressed="true"] { border-width: 3px; background: rgba(255, 224, 138, 0.2); }
+.fp-box .fp-num { position: absolute; top: -12px; left: -12px; box-shadow: 0 0 0 2px #ffffff; }
+.fp-box[aria-pressed="true"] .fp-num { background: var(--highlight, #ffe08a); color: var(--ink, #15213b); box-shadow: 0 0 0 2px var(--ink, #15213b); }

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0F766E}a:hover{color:#115E59}
+:focus-visible{outline:2px solid #0F766E;outline-offset:2px}
+</style>
+</helmet>
+<div style="min-height: 1900px; background: #F6F7F9; font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif; color: #15213B; display: flex; flex-wrap: wrap">
+<aside style="flex: 1 1 240px; max-width: 100%; box-sizing: border-box; background: #15213B; padding: 24px 18px; display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span role="img" aria-label="Fine Print" style="display: inline-flex; align-items: center; font-size: 22px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; white-space: nowrap; color: #FFFFFF; padding: 6px 0 8px">Fine<span style="position: relative; display: inline-block; margin: 0 0.25em 0 0.52em"><svg viewBox="0 0 150 150" aria-hidden="true" focusable="false" style="position: absolute; width: 1.5625em; height: 1.5625em; left: calc(50% - 0.625em); top: calc(50% - 0.625em); overflow: visible"><circle cx="60" cy="60" r="50" stroke-width="8" fill="#B4F1DA" stroke="#FFFFFF"></circle><line x1="96" y1="96" x2="126" y2="126" stroke-width="14" stroke-linecap="round" stroke="#FFFFFF"></line></svg><span style="position: relative; color: #15213B">P</span></span>rint</span>
+<span style="font-size: 12px; color: #AEB8CC">ClearPath Financial</span>
+</div>
+<button type="button" aria-label="Collapse menu" style="flex-shrink: 0; width: 36px; height: 36px; border: 1px solid #3A4A6E; border-radius: 8px; background: transparent; color: #FFFFFF; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg></button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span id="viewas" style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #B4F1DA">VIEWING AS</span>
+<button type="button" aria-haspopup="listbox" aria-labelledby="viewas" style="display: flex; align-items: center; gap: 12px; width: 100%; font: inherit; text-align: left; padding: 10px 14px; background: #1E2C4C; border: 1px solid #B4F1DA; border-radius: 12px; color: #FFFFFF">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 15px; font-weight: 700">Reviewer</span><span style="font-size: 12px; color: #AEB8CC">Compliance team</span></span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+</div>
+<nav aria-label="Main" style="display: flex; flex-direction: column; gap: 6px">
+<a href="Queue.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; color: #D5DBE7; font-weight: 500; font-size: 14px; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.5 5h13l3.5 7v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"></path></svg>Queue<span style="margin-left: auto; font-size: 12px; font-weight: 700; background: #2C3A5C; color: #FFFFFF; border-radius: 9999px; padding: 1px 8px">9</span></a>
+<a href="History.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; color: #D5DBE7; font-weight: 500; font-size: 14px; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l3 2"></path></svg>History</a>
+<a href="Rules.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 10px; background: #B4F1DA; color: #15213B; font-weight: 700; font-size: 14px; text-decoration: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"></path><path d="M4 19.5V21h16"></path></svg>Rules</a>
+</nav>
+<div style="flex-grow: 1"></div>
+<button type="button" aria-expanded="false" style="display: flex; align-items: center; gap: 8px; width: 100%; font: inherit; font-size: 13px; font-weight: 600; color: #D5DBE7; background: transparent; border: 1px solid #2C3A5C; border-radius: 10px; padding: 10px 12px; text-align: left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4F1DA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>Coming next<span style="flex-grow: 1"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+<div style="border-top: 1px solid #2C3A5C; padding-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><span style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #AEB8CC">WORKSPACE</span><button type="button" aria-label="Reset sample data" title="Reset sample data" style="flex-shrink: 0; width: 32px; height: 32px; border: 1px solid #3A4A6E; border-radius: 8px; background: transparent; color: #FFFFFF; display: flex; align-items: center; justify-content: center; padding: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg></button></div>
+</aside>
+<main style="flex: 999 1 600px; min-width: 0; box-sizing: border-box; padding: 40px; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px; max-width: 640px">
+<h1 style="margin: 0; font-size: 28px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em">Rules</h1>
+<p style="margin: 0; font-size: 14px; line-height: 22px; color: #4A5468">Every ad is checked against these 9 rules. Each suggestion names the rule it comes from.</p>
+</div>
+<a href="AddRule.dc.html" style="display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #FFFFFF; background: #0F766E; text-decoration: none; border-radius: 8px; padding: 0 18px; min-height: 42px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add a rule</a>
+</div>
+
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; overflow: hidden">
+<div style="padding: 18px 24px; background: #E6F4F1; border-left: 4px solid #0F766E; display: flex; align-items: center; gap: 12px"><h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #115E59">Claims</h2><span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0F766E; border-radius: 9999px; padding: 2px 9px">5</span><span style="font-size: 14px; color: #115E59">What the words promise</span></div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Rate claims</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">A rate like “as low as 7.99% APR” needs the full APR range and any conditions, like autopay.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to personal loans and credit cards · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Loans as low as 7.99% APR</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Fixed rates 7.99%–29.99% APR with autopay</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Credit score claims</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">“No impact to your credit score” is only true for checking your rate. Applying is a hard credit check.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to all products · Flagged as Caution</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">No impact to your credit score!</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Checking your rate won't affect your credit score. Applying may.</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Trigger terms</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">Some phrases, like “no annual fee”, require the APR and other key terms, even though they sound like good news.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to credit cards · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">No annual fee. Apply now.</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">No annual fee. 21.24%–29.24% variable APR.</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Savings claims</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">A savings claim needs real evidence, and its exclusions can't be hidden in fine print.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to all products · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Members save $4,200 on average</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">2025 borrowers who consolidated saved $4,200 on average. Results vary.</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Guarantees</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">No guaranteed approval, and no rates most people can't actually get.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to all products · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">GUARANTEED approval!!!</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Check your rate in minutes</span></div>
+</div>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; overflow: hidden">
+<div style="padding: 18px 24px; background: #E6F4F1; border-left: 4px solid #0F766E; display: flex; align-items: center; gap: 12px"><h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #115E59">Required elements</h2><span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0F766E; border-radius: 9999px; padding: 2px 9px">3</span><span style="font-size: 14px; color: #115E59">Things that must be on the ad</span></div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Mortgage identifiers</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">Mortgage ads show the NMLS ID and the Equal Housing logo.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to mortgage · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Get prequalified for your dream home</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">Get prequalified for your dream home</span><span style="font-size: 11px; font-weight: 600; color: #4A5468">NMLS ID 123456 · Equal Housing Lender</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Affiliate disclosure</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">Affiliate content says clearly that the publisher is paid by ClearPath.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to affiliate content · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">The best loans of 2026</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">The best loans of 2026</span><span style="font-size: 11px; font-weight: 600; color: #4A5468">We earn a fee from partners like ClearPath.</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Paid testimonials</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">A paid testimonial or influencer post is labeled as a paid partnership.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to affiliate content · Flagged as Critical</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">I paid off my cards in a month with ClearPath</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 11px; font-weight: 600; color: #4A5468">Paid partnership with ClearPath</span><span style="font-size: 15px; line-height: 21px; font-weight: 700">I paid off my cards in a month with ClearPath</span></div>
+</div>
+</div>
+</section>
+
+<section style="background: #FFFFFF; border: 1px solid #E3E6EC; border-radius: 14px; overflow: hidden">
+<div style="padding: 18px 24px; background: #E6F4F1; border-left: 4px solid #0F766E; display: flex; align-items: center; gap: 12px"><h2 style="margin: 0; font-size: 19px; font-weight: 800; color: #115E59">Presentation</h2><span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: #0F766E; border-radius: 9999px; padding: 2px 9px">1</span><span style="font-size: 14px; color: #115E59">How the ad looks</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; padding: 22px 24px; border-top: 1px solid #E3E6EC">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 6px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Clear and conspicuous</h3><p style="margin: 0; font-size: 14px; line-height: 22px; color: #374151">A disclosure is a readable size, close to the claim it explains, and visible without scrolling. It can't fix a claim that's false on its own.</p><p style="margin: 0; font-size: 12px; color: #4A5468">Applies to all products · Flagged as Caution</p></div>
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px">
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 120px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #FEF3F2; color: #B42318"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M15 9l-6 6M9 9l6 6" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"></path></svg>Don’t</span><span style="font-size: 20px; font-weight: 800">7.99% APR</span><span style="flex-grow: 1"></span><span style="font-size: 7px; color: #4A5468">With autopay. Terms apply.</span></div>
+<div style="flex: 1 1 190px; min-width: 0; border: 1px solid #E3E6EC; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-height: 120px"><span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px; border-radius: 4px; font-size: 12px; font-weight: 600; background: #ECFDF3; color: #067647"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"></circle><path d="M7.5 12.5l3 3 6-7" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>Do</span><span style="font-size: 20px; font-weight: 800">7.99%–29.99% APR</span><span style="font-size: 12px; font-weight: 500; color: #374151">With autopay. Autopay is not required.</span></div>
+</div>
+</div>
+</section>
+
+
+<p style="margin: 0; font-size: 12px; color: #4A5468">Rule wording is simplified for this sample workspace and is not legal advice.</p>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
