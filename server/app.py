@@ -89,6 +89,10 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     def rules():
         return jsonify(rules=repo.rules(get_db()))
 
+    @app.post("/api/rules")
+    def add_rule():
+        return jsonify(actions.add_rule(get_db(), body(), now())), 201
+
     @app.errorhandler(actions.ActionError)
     def action_error(error: actions.ActionError):
         return jsonify(error=str(error)), error.status
@@ -131,7 +135,7 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     @app.post("/api/ads/<int:ad_id>/submit")
     def submit(ad_id: int):
         db = get_db()
-        live = (lambda version_id: checker.run_check(db, version_id, now(), context="submit", log=False)) \
+        live = (lambda version_id: checker.run_check(db, version_id, now(), context="submit", log_event=False)) \
             if checker.available() else None
         return jsonify(actions.submit(db, ad_id, now(), live_check=live))
 
@@ -141,7 +145,9 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
         version_id = data.get("adVersionId")
         if not isinstance(version_id, int):
             return jsonify(error="adVersionId must be a number"), 400
-        result = checker.run_check(get_db(), version_id, now(), context=data.get("context", "re-check"))
+        db = get_db()
+        version_id = actions.checkable_version(db, version_id)
+        result = checker.run_check(db, version_id, now(), context=data.get("context", "re-check"))
         return jsonify(result)
 
     @app.get("/api/nav")

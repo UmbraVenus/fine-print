@@ -786,3 +786,74 @@ a.fp-pager:hover {
 .fp-footer-primary.ant-btn {
   padding: 10px 24px;
 }
+
+/* ---------------------------------------------------------------- rules */
+
+.fp-rule-section {
+  background: #ffffff;
+  border: 1px solid var(--fp-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.fp-rule-section-header {
+  padding: 18px 24px;
+  background: var(--fp-primary-soft);
+  border-left: 4px solid var(--fp-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fp-rule-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 22px 24px;
+  border-top: 1px solid var(--fp-line);
+}
+.fp-example {
+  flex: 1 1 190px;
+  min-width: 0;
+  border: 1px solid var(--fp-line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.fp-rule-form .ant-input,
+.fp-rule-form .ant-select-selector,
+.fp-rule-form .ant-select {
+  font-size: 15px;
+  min-height: 42px;
+}
+.fp-choice {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0 16px;
+  min-height: 40px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--fp-ink);
+  border: 1px solid var(--fp-line-strong);
+  cursor: pointer;
+}
+.fp-choice[aria-checked='true'] {
+  background: var(--fp-primary-soft);
+  color: var(--fp-primary-hover);
+  border: 2px solid var(--fp-primary);
+  padding: 0 15px;
+}
+.fp-check-chip.ant-checkbox-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0 12px;
+  min-height: 38px;
+  border: 1px solid var(--fp-line-strong);
+  border-radius: 8px;
+  margin: 0;
+}

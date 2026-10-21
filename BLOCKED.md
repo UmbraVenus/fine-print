@@ -28,3 +28,12 @@ The environment has no `ANTHROPIC_API_KEY`, so `npm run smoke:anthropic` stops w
 - **A `compared` check run kind** exists besides `seeded` and `live`: when a resubmission can't get a live check (no API key), v2 is compared with what was sent back on v1. A quote that's no longer in the copy counts as resolved.
 - **Two wireframe details conflict with the date rule:** 06-WhatChanged says "Resubmitted 40 min ago", and dates are by day, so it reads "Resubmitted today". 05-Review shows a submitter note "on Oct 2", and CLAUDE.md's seed says "Legal approved this rate wording last month.", which is used.
 - **SMS** appears once in the History wireframe, but no SMS template exists, so the filler has no SMS ads.
+
+## Live check: structured output instead of a forced tool call
+
+CLAUDE.md asks the check to "force a tool call with a JSON schema". The default model, `claude-sonnet-5-5`, rejects forced `tool_choice` (`any` or `tool`) with a 400. **Default:** the check asks for the same JSON shape with structured outputs (`output_config.format` with a JSON schema). That is the documented replacement, and it still guarantees the shape. The schema limits `rule_id` to the rules that apply and `layer_id` to the ad's layers. The server then drops any quote that isn't an exact substring of its layer.
+It also opts into the server-side refusal fallback (`fallbacks: "default"`), so a false-positive safety refusal falls back instead of failing. Any refusal that remains shows as "unavailable", like any other error.
+
+## Add a rule: "Affiliate content" checkbox
+
+The data model's `applies_to` allows products and/or "affiliate", but the 10-AddRule wireframe shows only the three products. **Default:** a fourth checkbox, "Affiliate content", so reviewers can add affiliate rules too.

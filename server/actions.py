@@ -290,3 +290,59 @@ def submit(db: Db, ad_id: int, now: datetime, live_check=None) -> dict:
                                                         **_counts(db, version["id"])})
     db.commit()
     return {"ad_id": ad_id, "version": number, "due_date": due_after_submit(now).isoformat()}
+
+
+def checkable_version(db: Db, version_id: int) -> int:
+    """Re-check only ever touches the marketer's working copy, never a version a reviewer has seen."""
+    version = db.one("SELECT * FROM ad_versions WHERE id = ?", (version_id,))
+    if not version:
+        raise ActionError("Version not found", 404)
+    ad = _ad(db, version["ad_id"])
+    if version["submitted_at"] is None:
+        return version_id
+    if ad["status"] == "changes_required" and version["version"] == ad["current_version"]:
+        working = _working_version(db, ad, create=True)
+        db.commit()
+        return working["id"]
+    raise ActionError("Only a draft or a returned ad can be re-checked", 409)
+
+
+# ---------------------------------------------------------------- reviewer: rules
+
+CATEGORIES = ("Claims", "Required elements", "Presentation")
+APPLIES = ("personal_loan", "credit_card", "mortgage", "affiliate")
+
+
+def add_rule(db: Db, data: dict, now: datetime) -> dict:
+    """A reviewer's rule. Live checks use it from now on; seeded results stay as they were."""
+    import re
+
+    name = _clean(data.get("name"), "The rule name", 80)
+    category = data.get("category")
+    if category not in CATEGORIES:
+        raise ActionError("Pick a category")
+    severity = data.get("severity")
+    if severity not in ("critical", "caution"):
+        raise ActionError("Pick Critical or Caution")
+    applies = data.get("applies_to")
+    if not isinstance(applies, list) or not applies or any(a not in APPLIES for a in applies):
+        raise ActionError("Pick at least one thing it applies to")
+    if db.scalar("SELECT COUNT(*) FROM rules WHERE lower(name) = lower(?)", (name,)):
+        raise ActionError("A rule with that name already exists", 409)
+    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40] or "rule"
+    rule_id = f"custom-{slug}"
+    suffix = 2
+    while db.scalar("SELECT COUNT(*) FROM rules WHERE id = ?", (rule_id,)):
+        rule_id = f"custom-{slug}-{suffix}"
+        suffix += 1
+    position = (db.scalar("SELECT MAX(position) FROM rules") or 0) + 1
+    db.insert("rules", {
+        "id": rule_id, "name": name, "category": category, "severity": severity,
+        "description": _clean(data.get("description"), "What it checks", 400),
+        "applies_to": [a for a in APPLIES if a in applies],
+        "dont_example": _clean(data.get("dont_example"), "The Don't example", 200),
+        "do_example": _clean(data.get("do_example"), "The Do example", 200),
+        "is_custom": True, "position": position, "created_at": iso(now),
+    })
+    db.commit()
+    return next(r for r in repo.rules(db) if r["id"] == rule_id)
