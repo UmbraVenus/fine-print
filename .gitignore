@@ -40,3 +40,6 @@ playwright-report/
 
 # Claude Code local
 .claude/worktrees/
+
+# Milestone screenshots: rewritten on every test run. screenshots/final/ is the deliverable set.
+screenshots/m*.png

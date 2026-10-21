@@ -86,7 +86,7 @@ From spec section 11. The sidebar shows the first three under "Coming next":
 
 ## A short tour (about 5 minutes)
 
-1. **Open Queue.** You start as a Reviewer. There are 9 ads, sorted by due date, with 4 due today. The stat cards and the trend tooltip are computed from the data.
+1. **Land on Insights, then open the Queue.** You start as a Reviewer, on Insights: approvals per week against the week before Fine Print, all computed from the data. Click **Open the Queue**: 9 ads, sorted by due date, with 4 due today. Click a stat card to show just those ads.
 2. **Review Fall personal loan.** Click **Review** (it opens a new tab). Pins on the ad and cards on the right are linked. Try the info icon next to "Claims · Rate claims", the submitter's note, and **Keep** on finding 1. Add a finding of your own, such as "Pick an image that doesn't suggest same-day cash."
 3. **Request changes.** The message comes prefilled from what you kept and added. The next ad in the queue opens in the same tab, and the toast offers **Undo** for 5 seconds.
 4. **Switch to Marketer** (VIEWING AS, top left). Fall personal loan now shows "Changes required · 2 comments from your reviewer" in My ads.
