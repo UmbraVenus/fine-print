@@ -78,6 +78,17 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
         result["filters"] = repo.filter_options(db, view)
         return jsonify(result)
 
+    @app.get("/api/ads/<int:ad_id>")
+    def ad(ad_id: int):
+        detail = repo.ad_detail(get_db(), ad_id)
+        if detail is None:
+            return jsonify(error="Ad not found"), 404
+        return jsonify(detail)
+
+    @app.get("/api/rules")
+    def rules():
+        return jsonify(rules=repo.rules(get_db()))
+
     @app.get("/api/nav")
     def nav():
         db = get_db()

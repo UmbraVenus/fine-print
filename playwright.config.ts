@@ -11,6 +11,8 @@ export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   reporter: 'list',
+  workers: 1,
+  fullyParallel: false,
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
@@ -18,14 +20,17 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, launchOptions } }],
   webServer: [
     {
+      // A separate database, so tests never touch your local sample data.
       command: 'npm run dev:api',
+      env: { DATABASE_URL: 'file:./e2e.db' },
       url: 'http://localhost:8000/api/health',
-      reuseExistingServer: !process.env.CI,
+      stdout: 'ignore',
+      reuseExistingServer: false,
     },
     {
       command: `npm run dev -- --port ${PORT} --strictPort`,
       url: `http://localhost:${PORT}`,
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
     },
   ],
 })

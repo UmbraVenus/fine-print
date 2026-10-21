@@ -115,7 +115,8 @@ def filter_options(db: Db, view: str) -> dict:
     where = VIEW_WHERE[view]
     def distinct(column: str) -> list[str]:
         return [r["v"] for r in db.all(f"SELECT DISTINCT {column} AS v FROM ads a WHERE {where} ORDER BY v")]
-    return {"formats": distinct("a.format"), "products": distinct("a.product"), "statuses": distinct("a.status")}
+    formats = [r["v"] for r in db.all("SELECT DISTINCT format AS v FROM ads")]
+    return {"formats": formats, "products": distinct("a.product"), "statuses": distinct("a.status")}
 
 
 # ---------------------------------------------------------------- stats
@@ -234,3 +235,69 @@ def history_stats(db: Db, now: datetime) -> list[dict]:
         {"key": "first_review", "value": first, "display": f"{first}%" if first is not None else "–",
          "label": "approved on first review", "tone": "primary", "icon": "target", "trend": first_trend},
     ]
+
+
+# ---------------------------------------------------------------- one ad
+
+def rules(db: Db) -> list[dict]:
+    rows = db.all("SELECT * FROM rules ORDER BY position, created_at")
+    for row in rows:
+        row["applies_to"] = json.loads(row["applies_to"])
+        row["is_custom"] = bool(row["is_custom"])
+    return rows
+
+
+def _findings(db: Db, version_id: int) -> list[dict]:
+    rows = db.all("SELECT * FROM findings WHERE ad_version_id = ? ORDER BY origin, position, id", (version_id,))
+    for row in rows:
+        row["sent_to_submitter"] = bool(row["sent_to_submitter"])
+    return rows
+
+
+def _check(db: Db, version_id: int) -> dict | None:
+    run = db.one("SELECT * FROM check_runs WHERE ad_version_id = ? ORDER BY id DESC LIMIT 1", (version_id,))
+    if run:
+        run["good_rule_ids"] = json.loads(run["good_rule_ids"])
+    return run
+
+
+def version_detail(db: Db, version: dict) -> dict:
+    version = dict(version)
+    version["theme"] = json.loads(version["theme"])
+    version["layers"] = json.loads(version["layers"])
+    version["findings"] = _findings(db, version["id"])
+    version["check"] = _check(db, version["id"])
+    return version
+
+
+def ad_detail(db: Db, ad_id: int) -> dict | None:
+    ad = db.one("SELECT * FROM ads WHERE id = ?", (ad_id,))
+    if not ad:
+        return None
+    ad["is_mine"] = bool(ad["is_mine"])
+    versions = [version_detail(db, v) for v in db.all(
+        "SELECT * FROM ad_versions WHERE ad_id = ? ORDER BY version", (ad_id,))]
+    current = next(v for v in versions if v["version"] == ad["current_version"])
+    draft = next((v for v in versions if v["version"] > ad["current_version"]), None)
+    events = db.all("SELECT * FROM events WHERE ad_id = ? ORDER BY at DESC, id DESC", (ad_id,))
+    for event in events:
+        event["detail"] = json.loads(event["detail"])
+    detail = {
+        "ad": ad,
+        "versions": [v for v in versions if v["version"] <= ad["current_version"]],
+        "current": current,
+        "draft": draft,
+        "events": events,
+        "rules": rules(db),
+        "queue": None,
+    }
+    if ad["status"] == "pending":
+        order = queue_order(db)
+        index = order.index(ad_id)
+        detail["queue"] = {
+            "position": index + 1,
+            "total": len(order),
+            "previous": order[index - 1] if index > 0 else None,
+            "next": order[index + 1] if index + 1 < len(order) else None,
+        }
+    return detail
