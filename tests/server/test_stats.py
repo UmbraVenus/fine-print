@@ -20,7 +20,7 @@ def test_queue_stats_agree_with_rows(db):
     assert stats["waiting"]["value"] == repo.list_ads(db, "queue")["total"] == 9
     assert stats["due_today"]["value"] == 4
     assert stats["reviewed"]["value"] > 0
-    assert stats["reviewed"]["trend"]["good"]
+    assert "trend" not in stats["reviewed"]  # trends live on Insights
 
 
 def test_history_stats(db):

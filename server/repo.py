@@ -190,12 +190,11 @@ def queue_stats(db: Db, now: datetime) -> list[dict]:
     waiting = pending_count(db)
     due_today = db.scalar("SELECT COUNT(*) FROM ads WHERE status = 'pending' AND due_date <= ?", (today,))
     week = reviewed_by_you(db, now - timedelta(days=7), now + timedelta(days=1))
-    last_week = reviewed_by_you(db, now - timedelta(days=14), now - timedelta(days=7))
     return [
         {"key": "waiting", "value": waiting, "label": "waiting", "tone": "primary", "icon": "inbox"},
         {"key": "due_today", "value": due_today, "label": "due today", "tone": "warning", "icon": "calendar"},
-        {"key": "reviewed", "value": week, "label": "you reviewed this week", "tone": "success", "icon": "check",
-         "trend": _trend(_pct_change(week, last_week), "up", "vs. last week")},
+        # Just the number: the trends live on Insights.
+        {"key": "reviewed", "value": week, "label": "you reviewed this week", "tone": "success", "icon": "check"},
     ]
 
 
