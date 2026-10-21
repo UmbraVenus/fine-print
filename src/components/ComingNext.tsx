@@ -45,10 +45,14 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
   const voted = Boolean(state?.voted.includes(feature))
   const votes = state ? state.votes[feature] : null
 
+  const [failed, setFailed] = useState(false)
   const vote = async () => {
     setSaving(true)
+    setFailed(false)
     try {
       setMine(await api.post<VoteState>('/api/votes', { feature }))
+    } catch {
+      setFailed(true)
     } finally {
       setSaving(false)
     }
@@ -72,6 +76,11 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
         )}
         {votes !== null && <span aria-live="polite" style={{ fontSize: 13, color: '#4A5468' }}>{people(votes)}</span>}
       </div>
+      {failed && (
+        <span role="alert" style={{ fontSize: 13, color: '#B42318' }}>
+          Couldn't save your vote. Try again.
+        </span>
+      )}
     </div>
   )
 }
