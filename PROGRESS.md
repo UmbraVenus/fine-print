@@ -8,7 +8,8 @@
   - Checks: `e2e/shell.spec.ts` (nav per role, cookie, redirects, Coming next, reset, collapse). Screenshots `screenshots/m2-*.png`.
 - [x] **M3 · Tables**: one antd Table for My ads, Queue and History with header filters (Reset / Apply), name and date sorting, search, pagination with "Go to" past 5 pages, empty states, computed stat cards with trend tooltips, and the View drawer (`?view=<id>`, Esc closes).
   - Checks: `e2e/tables.spec.ts` (stats agree with rows, filters, search, pagination, drawer). Screenshots `screenshots/m3-*.png`, compared side by side with 01, 02, 04 and 08.
-- [ ] M4 · Review
+- [x] **M4 · Review**: header with Previous / "3 of 9" / Next in queue order, the ad with linked pins and cards, Critical and Caution groups open, Good and Dismissed collapsed, Keep (toggles to a dark "✓ Kept"), Edit, Dismiss… with a required reason (and Restore), Your findings (add, edit, delete), a sticky decision bar, message dialogs prefilled from what's kept, a 5-second "Approved · Undo" toast that restores everything, the next ad opens in the same tab, and an empty state when the queue clears.
+  - Checks: `e2e/review.spec.ts` ("reviewer requests changes on Fall personal loan", Undo, Previous / Next, What changed, text formats, queue cleared) and `tests/server/test_review.py`. Screenshots `screenshots/m4-*.png` vs 05.
 - [ ] M5 · Pre-check and the loop
 - [ ] M6 · Live check and rules
 - [ ] M7 · Polish

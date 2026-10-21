@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 from flask import Flask, g, jsonify, request
 
-from . import repo
+from . import actions, repo
 from .dates import iso, local_date, utcnow
 from .db import Db, connect, migrate
 from .seed import ensure_seeded, seed
@@ -88,6 +88,41 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     @app.get("/api/rules")
     def rules():
         return jsonify(rules=repo.rules(get_db()))
+
+    @app.errorhandler(actions.ActionError)
+    def action_error(error: actions.ActionError):
+        return jsonify(error=str(error)), error.status
+
+    def body() -> dict:
+        return request.get_json(silent=True) or {}
+
+    @app.post("/api/findings/<int:finding_id>")
+    def update_finding(finding_id: int):
+        data = body()
+        return jsonify(actions.update_finding(get_db(), finding_id, data.get("action", ""), text=data.get("text"),
+                                              reason=data.get("reason"), note=data.get("note")))
+
+    @app.post("/api/ads/<int:ad_id>/findings")
+    def add_finding(ad_id: int):
+        return jsonify(actions.add_reviewer_finding(get_db(), ad_id, body().get("text"), now())), 201
+
+    @app.put("/api/reviewer-findings/<int:finding_id>")
+    def edit_finding(finding_id: int):
+        return jsonify(actions.edit_reviewer_finding(get_db(), finding_id, body().get("text")))
+
+    @app.delete("/api/reviewer-findings/<int:finding_id>")
+    def delete_finding(finding_id: int):
+        actions.delete_reviewer_finding(get_db(), finding_id)
+        return jsonify(ok=True)
+
+    @app.post("/api/ads/<int:ad_id>/decision")
+    def decision(ad_id: int):
+        data = body()
+        return jsonify(actions.decide(get_db(), ad_id, data.get("status", ""), data.get("message"), now()))
+
+    @app.post("/api/undo/<token>")
+    def undo(token: str):
+        return jsonify(actions.undo(get_db(), token))
 
     @app.get("/api/nav")
     def nav():

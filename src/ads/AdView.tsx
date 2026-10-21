@@ -138,7 +138,24 @@ function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffse
     )
   })
 
-  const body = (
+  const segments = segment(layer.text, mine)
+  // A marker on the whole layer also takes in its icon, like the Equal Housing logo.
+  const wholeLayer = prefix && segments.length === 1 && segments[0].markers.length > 0
+  const body = wholeLayer ? (
+    kind === 'outline' ? (
+      <OutlinedSpan markers={segments[0].markers} state={state} small={small}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {prefix}
+          {layer.text}
+        </span>
+      </OutlinedSpan>
+    ) : (
+      <UnderlinedSpan markers={segments[0].markers} state={state} offset={underlineOffset}>
+        {prefix}
+        {layer.text}
+      </UnderlinedSpan>
+    )
+  ) : (
     <>
       {prefix}
       {content}
