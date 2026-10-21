@@ -171,3 +171,122 @@ def undo(db: Db, token: str) -> dict:
     db.run("DELETE FROM meta WHERE key = ?", (f"undo:{token}",))
     db.commit()
     return {"ad_id": ad_id}
+
+
+# ---------------------------------------------------------------- marketer: pre-check and submit
+
+def _working_version(db: Db, ad: dict, create: bool) -> dict | None:
+    """The version the marketer is editing: the draft itself, or a new unsubmitted version after changes."""
+    current = _current_version(db, ad)
+    if current["submitted_at"] is None:
+        return current
+    draft = db.one("SELECT * FROM ad_versions WHERE ad_id = ? AND version = ?", (ad["id"], ad["current_version"] + 1))
+    if draft or not create:
+        return draft
+    draft_id = db.insert("ad_versions", {
+        "ad_id": ad["id"], "version": ad["current_version"] + 1, "template": current["template"],
+        "theme": current["theme"], "layers": current["layers"], "submitted_at": None, "created_at": current["created_at"],
+    })
+    # The draft starts from the last check, so suggestions and notes carry on while the copy changes.
+    run = db.one("SELECT * FROM check_runs WHERE ad_version_id = ? ORDER BY id DESC LIMIT 1", (current["id"],))
+    if run:
+        run_id = db.insert("check_runs", {
+            "ad_version_id": draft_id, "kind": run["kind"], "good_rule_ids": run["good_rule_ids"],
+            "checks_run": run["checks_run"], "created_at": run["created_at"], "error": None,
+        })
+        for f in db.all("SELECT * FROM findings WHERE ad_version_id = ? AND origin = 'auto' AND state != 'dismissed'",
+                        (current["id"],)):
+            copy = {k: f[k] for k in ("origin", "rule_id", "severity", "layer_id", "quote", "text", "fix_label",
+                                      "suggested_fix", "position", "created_at")}
+            db.insert("findings", {**copy, "ad_version_id": draft_id, "check_run_id": run_id, "state": "open"})
+    return db.one("SELECT * FROM ad_versions WHERE id = ?", (draft_id,))
+
+
+def _validate_layers(version: dict, layers: list) -> list[dict]:
+    known = {l["id"]: l for l in json.loads(version["layers"])}
+    if not isinstance(layers, list):
+        raise ActionError("Layers must be a list")
+    cleaned = []
+    for layer in layers:
+        if not isinstance(layer, dict) or layer.get("id") not in known:
+            raise ActionError("Unknown layer")
+        text = str(layer.get("text", "")).strip()
+        if not text:
+            raise ActionError("A text layer can't be empty")
+        cleaned.append({**known[layer["id"]], "text": text[:2000]})
+    if [l["id"] for l in cleaned] != list(known):
+        raise ActionError("Send every layer, in order")
+    return cleaned
+
+
+def save_copy(db: Db, ad_id: int, layers: list, now: datetime) -> dict:
+    ad = _ad(db, ad_id)
+    if ad["status"] not in ("draft", "changes_required"):
+        raise ActionError("Only drafts and ads that need changes can be edited", 409)
+    version = _working_version(db, ad, create=True)
+    db.update("ad_versions", version["id"], {"layers": _validate_layers(version, layers)})
+    db.update("ads", ad_id, {"updated_at": iso(now)})
+    db.commit()
+    return repo.version_detail(db, db.one("SELECT * FROM ad_versions WHERE id = ?", (version["id"],)))
+
+
+def compare_with_previous(db: Db, version_id: int, now: datetime) -> int:
+    """
+    Without a live check, carry the last check forward: a suggestion whose quoted words are no longer
+    in the copy counts as fixed. Suggestions about something missing stay until a real check runs.
+    """
+    version = db.one("SELECT * FROM ad_versions WHERE id = ?", (version_id,))
+    layers = {l["id"]: l["text"] for l in json.loads(version["layers"])}
+    run = db.one("SELECT * FROM check_runs WHERE ad_version_id = ? ORDER BY id DESC LIMIT 1", (version_id,))
+    good = set(json.loads(run["good_rule_ids"])) if run else set()
+    checks_run = run["checks_run"] if run else 0
+    findings = db.all("SELECT * FROM findings WHERE ad_version_id = ? AND origin = 'auto'", (version_id,))
+    run_id = db.insert("check_runs", {"ad_version_id": version_id, "kind": "compared", "good_rule_ids": [],
+                                      "checks_run": checks_run, "created_at": iso(now)})
+    remaining: set[str] = set()
+    for f in findings:
+        text = layers.get(f["layer_id"]) if f["layer_id"] else None
+        fixed = f["quote"] is not None and (text is None or f["quote"] not in text)
+        if fixed:
+            db.run("DELETE FROM findings WHERE id = ?", (f["id"],))
+        else:
+            db.update("findings", f["id"], {"check_run_id": run_id})
+            remaining.add(f["rule_id"])
+    flagged_before = {f["rule_id"] for f in findings}
+    good |= flagged_before - remaining
+    db.update("check_runs", run_id, {"good_rule_ids": sorted(good)})
+    return run_id
+
+
+def _counts(db: Db, version_id: int) -> dict:
+    rows = db.all("SELECT severity FROM findings WHERE ad_version_id = ? AND origin = 'auto' AND state != 'dismissed'",
+                  (version_id,))
+    severities = [r["severity"] for r in rows]
+    return {"critical": severities.count("critical"), "caution": severities.count("caution")}
+
+
+def submit(db: Db, ad_id: int, now: datetime, live_check=None) -> dict:
+    """Submit (or resubmit) the marketer's copy. The auto check never blocks this."""
+    from .dates import due_after_submit
+
+    ad = _ad(db, ad_id)
+    if ad["status"] not in ("draft", "changes_required"):
+        raise ActionError("This ad is already with a reviewer", 409)
+    resubmit = ad["status"] == "changes_required"
+    version = _working_version(db, ad, create=True)
+    number = version["version"]
+    db.update("ad_versions", version["id"], {"submitted_at": iso(now), "created_at": iso(now)})
+    db.update("ads", ad_id, {
+        "status": "pending", "current_version": number, "updated_at": iso(now), "closed_at": None,
+        "due_date": due_after_submit(now).isoformat(),
+    })
+    _event(db, ad_id, now, "Marketer", "resubmitted" if resubmit else "submitted", {"version": number})
+    db.commit()
+
+    check = live_check(version["id"]) if live_check else None
+    if (check is None or check.get("status") != "ok") and resubmit:
+        compare_with_previous(db, version["id"], now)
+    _event(db, ad_id, now, "Auto check", "check_ran", {"context": "submit", "version": number,
+                                                        **_counts(db, version["id"])})
+    db.commit()
+    return {"ad_id": ad_id, "version": number, "due_date": due_after_submit(now).isoformat()}

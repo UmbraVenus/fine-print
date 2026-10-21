@@ -181,8 +181,8 @@ function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffse
         }}
       >
         {body}
+        {edited && <span className="fp-edited-badge">Edited</span>}
       </span>
-      {edited && <span className="fp-edited-badge">Edited</span>}
     </Tag>
   )
 }

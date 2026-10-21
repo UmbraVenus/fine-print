@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 from flask import Flask, g, jsonify, request
 
-from . import actions, repo
+from . import actions, checker, repo
 from .dates import iso, local_date, utcnow
 from .db import Db, connect, migrate
 from .seed import ensure_seeded, seed
@@ -123,6 +123,26 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     @app.post("/api/undo/<token>")
     def undo(token: str):
         return jsonify(actions.undo(get_db(), token))
+
+    @app.put("/api/ads/<int:ad_id>/copy")
+    def save_copy(ad_id: int):
+        return jsonify(actions.save_copy(get_db(), ad_id, body().get("layers"), now()))
+
+    @app.post("/api/ads/<int:ad_id>/submit")
+    def submit(ad_id: int):
+        db = get_db()
+        live = (lambda version_id: checker.run_check(db, version_id, now(), context="submit", log=False)) \
+            if checker.available() else None
+        return jsonify(actions.submit(db, ad_id, now(), live_check=live))
+
+    @app.post("/api/check")
+    def check():
+        data = body()
+        version_id = data.get("adVersionId")
+        if not isinstance(version_id, int):
+            return jsonify(error="adVersionId must be a number"), 400
+        result = checker.run_check(get_db(), version_id, now(), context=data.get("context", "re-check"))
+        return jsonify(result)
 
     @app.get("/api/nav")
     def nav():

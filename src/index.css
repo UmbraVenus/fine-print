@@ -285,9 +285,9 @@ a:hover {
   outline: 1px dashed currentColor;
 }
 .fp-edited-badge {
-  position: absolute;
-  top: -16px;
-  left: 0;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 6px;
   font-family: var(--fp-sans);
   font-size: 10px;
   line-height: 14px;
@@ -742,4 +742,47 @@ a.fp-pager:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+.fp-copy-button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fp-primary-hover);
+  background: #ffffff;
+  border: 1px solid var(--fp-primary);
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-height: 36px;
+  cursor: pointer;
+}
+.fp-copy-button:hover {
+  background: var(--fp-primary-soft);
+}
+.fp-small-button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-height: 36px;
+}
+.fp-sent-card {
+  border: 1px solid var(--fp-line);
+  border-left: 3px solid var(--fp-ink);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.fp-footer-button.ant-btn {
+  font-size: 14px;
+  font-weight: 600;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-color: var(--fp-line-strong);
+}
+.fp-footer-primary.ant-btn {
+  padding: 10px 24px;
 }

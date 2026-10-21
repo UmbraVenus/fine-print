@@ -65,8 +65,8 @@ export function compareVersions(detail: AdDetail): Comparison | null {
         how = `Removed “${quoteShort(finding.quote ?? before.text)}”.`
       } else if (before && after && before.text !== after.text) {
         how = finding.quote && !after.text.includes(finding.quote)
-          ? `“${quoteShort(finding.quote, 40)}” is gone. Now reads “${quoteShort(after.text)}”.`
-          : `Now reads “${quoteShort(after.text)}”.`
+          ? `Reworded “${quoteShort(finding.quote, 60)}”.`
+          : `Changed to “${quoteShort(after.text)}”.`
         layerId = after.id
       }
       return { n: i + 1, finding, rule: finding.rule_id ? byRule.get(finding.rule_id) ?? null : null, how, layerId }

@@ -10,7 +10,8 @@
   - Checks: `e2e/tables.spec.ts` (stats agree with rows, filters, search, pagination, drawer). Screenshots `screenshots/m3-*.png`, compared side by side with 01, 02, 04 and 08.
 - [x] **M4 · Review**: header with Previous / "3 of 9" / Next in queue order, the ad with linked pins and cards, Critical and Caution groups open, Good and Dismissed collapsed, Keep (toggles to a dark "✓ Kept"), Edit, Dismiss… with a required reason (and Restore), Your findings (add, edit, delete), a sticky decision bar, message dialogs prefilled from what's kept, a 5-second "Approved · Undo" toast that restores everything, the next ad opens in the same tab, and an empty state when the queue clears.
   - Checks: `e2e/review.spec.ts` ("reviewer requests changes on Fall personal loan", Undo, Previous / Next, What changed, text formats, queue cleared) and `tests/server/test_review.py`. Screenshots `screenshots/m4-*.png` vs 05.
-- [ ] M5 · Pre-check and the loop
+- [x] **M5 · Pre-check and the loop**: click any text layer to edit it in place (saved as you go, marked "Edited"), Copy suggested fix, Add a note (saved as you type), Re-check (shows "Auto check unavailable right now…" without a key), Submit (Pending, due 1 business day later, a new version after Changes required, events logged), "From your reviewer" on returned ads, and What changed (v1 above v2, resolved items green on v2, Resolved / Still open / New by rule and layer).
+  - Checks: `e2e/loop.spec.ts` runs the full loop (marketer edits Holiday debt email → submits v2 → reviewer sees What changed → approves → History → My ads shows Approved) and the Pre-check details; `tests/server/test_precheck.py`.
 - [ ] M6 · Live check and rules
 - [ ] M7 · Polish
 - [ ] M8 · README
