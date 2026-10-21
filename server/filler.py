@@ -9,15 +9,41 @@ import random
 from datetime import datetime, timedelta
 
 from .dates import WORKSPACE_TZ
+from .seed_data import RULES, rule_applies
 
 # Weekly volume of approvals, oldest week first. Week 0 is the last 7 days.
 APPROVED_PER_WEEK = [66, 88, 118, 158, 205, 258, 312, 368, 418]
 # Average hours from first submission to the decision, oldest week first.
 TURNAROUND_HOURS = [50.0, 38.0, 27.0, 19.0, 13.0, 9.0, 6.5, 5.2, 4.2]
 # Share of ads approved on their first review, oldest week first.
-FIRST_PASS = [0.42, 0.44, 0.46, 0.48, 0.50, 0.53, 0.56, 0.58, 0.60]
+FIRST_PASS = [0.40, 0.42, 0.44, 0.47, 0.50, 0.54, 0.58, 0.61, 0.64]
+# Rounds an ad takes when it's sent back at least once, oldest week first: about 4 rounds an ad
+# before Fine Print, about 1.6 now.
+RETURNED_ROUNDS = [5.6, 5.2, 4.6, 4.0, 3.4, 2.9, 2.6, 2.5, 2.4]
 REJECTED_SHARE = 0.03
 AFFILIATE_SHARE = 0.10
+# Each affiliate publisher's share of ads approved on first review: the Affiliate compliance score.
+AFFILIATE_FIRST_PASS = {"TotallyLegitLoans.biz": 0.41, "Influencer partner": 0.73,
+                        "Loan comparison site": 0.88, "Personal finance blog": 0.92}
+
+# Why an ad was sent back: the rule it broke, the auto finding, and the reviewer's message.
+# Weights are among the rules that apply to the ad.
+ISSUES = {
+    "rate-claims": (6.0, "The rate claim is missing the full APR range.", "Show the full APR range, then resubmit."),
+    "clear-and-conspicuous": (3.4, "The disclosure is too small and far from the claim.",
+                              "The disclosure is too far from the claim. Move it up and resubmit."),
+    "mortgage-identifiers": (7.0, "No NMLS ID on the ad.", "Add the NMLS ID and the Equal Housing logo, then resubmit."),
+    "affiliate-disclosure": (30.0, "Never says the publisher is paid by ClearPath.", "Add the affiliate disclosure at the top, then resubmit."),
+    "paid-testimonials": (4.0, "A paid post, but it isn't labeled as a paid partnership.",
+                          "Label the post as a paid partnership, then resubmit."),
+    "trigger-terms": (2.0, "“No annual fee” is a trigger term, so the ad also needs the APR.",
+                      "Add the APR next to “No annual fee”, then resubmit."),
+    "credit-score-claims": (1.2, "“Won't affect your credit score” is only true for checking your rate.",
+                            "Say that applying may affect the credit score, then resubmit."),
+    "savings-claims": (0.8, "The savings claim doesn't say where the number comes from.",
+                       "Back up the savings number or take it out, then resubmit."),
+    "guarantees": (0.6, "Promises guaranteed approval.", "Take out the word “guaranteed”, then resubmit."),
+}
 
 PALETTES = [
     ("#FFF1E0", "#7A3E10", "#F2994A"),
@@ -83,10 +109,12 @@ INTERNAL_STEMS = [
     ("same rate promise", "Instagram ad", "personal_loan"),
 ]
 AFFILIATE_STEMS = [
-    ("travel rewards post", "Blog post", "credit_card", "CardCompare.example"),
-    ("first home guide", "Blog post", "mortgage", "HomeSmart.example"),
-    ("best cards roundup", "Blog post", "credit_card", "CardCompare.example"),
-    ("loan comparison guide", "Blog post", "personal_loan", "LoanLens.example"),
+    ("travel rewards post", "Blog post", "credit_card", "Personal finance blog"),
+    ("first home guide", "Blog post", "mortgage", "Personal finance blog"),
+    ("best cards roundup", "Blog post", "credit_card", "Loan comparison site"),
+    ("loan comparison guide", "Blog post", "personal_loan", "Loan comparison site"),
+    ("fast cash loans list", "Blog post", "personal_loan", "TotallyLegitLoans.biz"),
+    ("no credit check picks", "Blog post", "personal_loan", "TotallyLegitLoans.biz"),
     ("budget reset story", "Instagram post", "personal_loan", "Influencer partner"),
     ("rewards haul post", "Instagram post", "credit_card", "Influencer partner"),
 ]
@@ -125,12 +153,6 @@ REVIEWER_NOTES = [
     "Add “See rates and fees” right after the APR.",
     "Make the footer disclosure at least 10px.",
     "Add the NMLS ID to the footer.",
-]
-CHANGE_REQUESTS = [
-    "Show the full APR range, then resubmit.",
-    "The disclosure is too far from the claim. Move it up and resubmit.",
-    "Take out the word “guaranteed”, then resubmit.",
-    "Label the post as a paid partnership, then resubmit.",
 ]
 
 
@@ -218,6 +240,12 @@ def _unique_name(rng: random.Random, stem: str, used: set[str]) -> str:
     return name[0].upper() + name[1:]
 
 
+def _pick_issue(rng: random.Random, product: str, source: str) -> str:
+    rules = {r["id"]: r for r in RULES}
+    options = [(rule_id, weight) for rule_id, (weight, _, _) in ISSUES.items() if rule_applies(rules[rule_id], product, source)]
+    return rng.choices([o[0] for o in options], weights=[o[1] for o in options])[0]
+
+
 def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) -> list[dict]:
     """Plain descriptions of closed ads; seed.py writes them to the database."""
     rng = random.Random(20261021)
@@ -240,7 +268,8 @@ def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) ->
             closed = _closing_moment(rng, now, week)
             hours = max(0.5, rng.gauss(TURNAROUND_HOURS[index], TURNAROUND_HOURS[index] * 0.35))
             submitted = closed - timedelta(hours=hours)
-            first_pass = rejected or rng.random() < FIRST_PASS[index]
+            first_pass_rate = AFFILIATE_FIRST_PASS.get(source, FIRST_PASS[index])
+            first_pass = rejected or rng.random() < first_pass_rate
             template = formats[fmt]
             theme, layers = _layers(rng, template, product, name)
             if rejected:
@@ -256,12 +285,20 @@ def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) ->
                 "note": rng.choice(REVIEWER_NOTES) + " No second review needed." if status == "approved_with_changes" else None,
                 "rejection": "The offer in this ad doesn't exist." if rejected else None,
             }
-            if not first_pass:
-                # One round of changes, somewhere in the middle.
-                ad["changes_at"] = submitted + timedelta(hours=hours * rng.uniform(0.3, 0.5))
-                ad["resubmitted"] = ad["changes_at"] + timedelta(hours=hours * rng.uniform(0.2, 0.35))
-                ad["change_request"] = rng.choice(CHANGE_REQUESTS)
-                ad["changes_by_you"] = rng.random() < 1 / 3
+            # Each round: submitted, then sent back for one issue, until the last round is decided.
+            rounds = 1 if first_pass else min(9, max(2, round(rng.gauss(RETURNED_ROUNDS[index], 0.9))))
+            segment = hours / rounds
+            ad["rounds"] = []
+            for number in range(1, rounds + 1):
+                start = submitted + timedelta(hours=segment * (number - 1))
+                round_ = {"number": number, "submitted": start}
+                if number < rounds:
+                    rule_id = _pick_issue(rng, product, source)
+                    _, finding, message = ISSUES[rule_id]
+                    round_.update(rule_id=rule_id, finding=finding, message=message,
+                                  changes_at=start + timedelta(hours=segment * rng.uniform(0.4, 0.7)),
+                                  by_you=rng.random() < 1 / 3)
+                ad["rounds"].append(round_)
             ads.append(ad)
             ad_id += 1
     return ads

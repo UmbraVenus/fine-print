@@ -971,3 +971,24 @@ a.fp-pager:hover {
   border-radius: 8px;
   padding: 8px 12px;
 }
+
+.fp-text-link {
+  color: #115e59;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.fp-text-link:hover {
+  color: var(--fp-primary);
+}
+
+/* Four across, or two by two: never a card alone on a row. */
+.fp-insight-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 1199px) {
+  .fp-insight-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

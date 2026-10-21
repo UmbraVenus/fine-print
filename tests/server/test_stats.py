@@ -60,3 +60,30 @@ def test_sort_by_name(db):
     rows = repo.list_ads(db, "my-ads", sort="name", order="asc")["rows"]
     names = [r["name"] for r in rows]
     assert names == sorted(names, key=str.lower)
+
+
+def test_insights_tell_the_same_story_as_history(db):
+    insights = repo.insights(db, NOW)
+    metrics = {m["key"]: m for m in insights["metrics"]}
+    history = by_key(repo.stats(db, "history", NOW))
+    # Same numbers as History's cards, and each series ends on its headline number.
+    assert metrics["approved"]["value"] == history["approved"]["value"] == metrics["approved"]["series"][-1]
+    assert metrics["turnaround"]["value"] == history["turnaround"]["value"] == metrics["turnaround"]["series"][-1]
+    assert metrics["first_round"]["value"] == history["first_review"]["value"]
+    assert metrics["first_round"]["trend"] == history["first_review"]["trend"]
+    assert metrics["approved"]["note"].endswith(f"({metrics['approved']['series'][0]})")
+    # The throughput story: more approved, faster, fewer rounds.
+    assert metrics["approved"]["trend"]["direction"] == "up"
+    assert metrics["turnaround"]["trend"]["direction"] == "down" and "working days" in metrics["turnaround"]["note"]
+    assert metrics["rounds"]["value"] < metrics["rounds"]["series"][0]
+    assert len(metrics["approved"]["series"]) == 9
+    # Top issues: the most flagged rules, biggest first, as shares of all findings.
+    shares = [i["share"] for i in insights["issues"]]
+    assert shares == sorted(shares, reverse=True) and sum(shares) <= 100 and insights["issues"][0]["name"] == "Rate claims"
+    # Affiliates: worst first, with the status that matches the score.
+    affiliates = insights["affiliates"]
+    assert [a["score"] for a in affiliates] == sorted(a["score"] for a in affiliates)
+    assert {a["source"] for a in affiliates} == {"TotallyLegitLoans.biz", "Influencer partner", "Loan comparison site", "Personal finance blog"}
+    for a in affiliates:
+        assert a["status"] == ("good" if a["score"] >= 85 else "watch" if a["score"] >= 60 else "at_risk")
+    assert affiliates[0]["source"] == "TotallyLegitLoans.biz" and affiliates[0]["status"] == "at_risk"

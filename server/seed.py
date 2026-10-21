@@ -176,39 +176,45 @@ def _seed_filler(db: Db, now: datetime) -> None:
     ads = filler.generate(now, FORMAT_TEMPLATES)
     next_version = (db.scalar("SELECT MAX(id) FROM ad_versions") or 0) + 1
     next_run = (db.scalar("SELECT MAX(id) FROM check_runs") or 0) + 1
-    ad_rows, version_rows, run_rows, finding_rows, event_rows = [], [], [], [], []
+    ad_rows, version_rows, run_rows, finding_rows, issue_rows, event_rows = [], [], [], [], [], []
+    severity = {r["id"]: r["severity"] for r in rules}
 
     for ad in ads:
         if ad["format"] == "Instagram post":
             ad["layers"][0]["text"] = "Paid partnership with ClearPath"
         applicable = [r["id"] for r in rules if rule_applies(r, ad["product"], ad["source"])]
-        versions = [(1, ad["submitted"])]
-        if not ad["first_pass"]:
-            versions.append((2, ad["resubmitted"]))
+        rounds = ad["rounds"]
         ad_rows.append((
-            ad["id"], ad["name"], ad["format"], ad["product"], ad["source"], ad["status"], len(versions), 0, None,
+            ad["id"], ad["name"], ad["format"], ad["product"], ad["source"], ad["status"], len(rounds), 0, None,
             iso(ad["submitted"] - timedelta(hours=2)), iso(ad["closed"]), iso(ad["closed"]), None,
         ))
         events = []
         if ad["precheck"]:
             events.append((ad["submitted"] - timedelta(minutes=40), "Auto check", "check_ran",
                            {"context": "pre-check", "version": 1, "critical": 0, "caution": 0}))
-        for number, submitted in versions:
+        for round_ in rounds:
+            number, submitted = round_["number"], round_["submitted"]
             version_id = next_version
             next_version += 1
             version_rows.append((version_id, ad["id"], number, ad["template"], json.dumps(ad["theme"]),
                                  json.dumps(ad["layers"]), iso(submitted), iso(submitted)))
-            run_rows.append((next_run, version_id, "seeded", json.dumps(applicable), len(applicable), iso(submitted)))
-            next_run += 1
+            issue = round_.get("rule_id")
+            good = [rid for rid in applicable if rid != issue]
+            run_rows.append((next_run, version_id, "seeded", json.dumps(good), len(applicable), iso(submitted)))
             events.append((submitted, "Marketer", "submitted" if number == 1 else "resubmitted", {"version": number}))
+            critical = int(bool(issue) and severity[issue] == "critical")
             events.append((submitted + timedelta(seconds=20), "Auto check", "check_ran",
-                           {"context": "submit", "version": number, "critical": 0, "caution": 0}))
-            if number == 1 and not ad["first_pass"]:
-                finding_rows.append((version_id, "reviewer", ad["change_request"], 1, iso(ad["changes_at"])))
-                events.append((ad["changes_at"], "Reviewer", "decision",
-                               {"status": "changes_required", "message": ad["change_request"], "version": 1,
-                                "by_you": ad["changes_by_you"]}))
-            if number == len(versions):
+                           {"context": "submit", "version": number, "critical": critical,
+                            "caution": int(bool(issue)) - critical}))
+            if issue:
+                # Sent back: the issue the reviewer kept, and their message.
+                issue_rows.append((version_id, next_run, "auto", issue, severity[issue], round_["finding"],
+                                   "kept", 1, 0, iso(submitted)))
+                events.append((round_["changes_at"], "Reviewer", "decision",
+                               {"status": "changes_required", "message": round_["message"], "version": number,
+                                "by_you": round_["by_you"]}))
+            next_run += 1
+            if number == len(rounds):
                 if ad["note"]:
                     finding_rows.append((version_id, "reviewer", ad["note"], 1, iso(ad["closed"])))
                 events.append((ad["closed"], "Reviewer", "decision",
@@ -225,6 +231,8 @@ def _seed_filler(db: Db, now: datetime) -> None:
             "VALUES (?,?,?,?,?,?)", run_rows)
     db.many("INSERT INTO findings (ad_version_id, origin, text, sent_to_submitter, created_at) VALUES (?,?,?,?,?)",
             finding_rows)
+    db.many("INSERT INTO findings (ad_version_id, check_run_id, origin, rule_id, severity, text, state, "
+            "sent_to_submitter, position, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)", issue_rows)
     db.many("INSERT INTO events (ad_id, at, actor, type, detail) VALUES (?,?,?,?,?)", event_rows)
 
 

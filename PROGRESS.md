@@ -46,6 +46,7 @@
 - Pre-check has Previous / "1 of 2" / Next, like Review: it steps through the marketer's ads that need attention (Draft and Changes required), in My ads order.
 - Reviewer findings that put words from the ad in quotation marks are pinned to them (a person pin, so it's never confused with a numbered auto finding): on Review, on the marketer's Pre-check (with Edit on ad), and in What changed, where they count as resolved once the words are gone. Nothing quoted, or words not on the ad: plain text, as before. Check: `e2e/reviewer-quotes.spec.ts` and `test_quoted_words_in_a_reviewer_finding_pin_it_to_the_ad`.
 - Secret link (`ACCESS_KEY`): the site and API open only from `?key=…`, then a 30-day cookie; noindex everywhere. Live checks reuse the last result when nothing changed, and are capped (10 a minute per visitor, 200 a day, settable).
+- Insights (Reviewer), from the owner's mock-up: ads approved per week, submit to approval, rounds per ad and approved in round 1, each against the week before Fine Print with a weekly sparkline; top issue types; affiliate compliance scores. All computed; the History filler now has several rounds per returned ad, the issue each round was sent back for, and four affiliate publishers. Check: `test_insights_tell_the_same_story_as_history`, `e2e/insights.spec.ts`.
 
 ## Ideas, not built
 

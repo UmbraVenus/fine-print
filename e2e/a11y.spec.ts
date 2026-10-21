@@ -9,6 +9,7 @@ test.beforeEach(async ({ page }) => {
 const PAGES: Array<{ role: 'reviewer' | 'marketer'; path: string; ready: string }> = [
   { role: 'reviewer', path: '/queue', ready: 'Best loans of 2026' },
   { role: 'reviewer', path: '/history', ready: 'approved this week' },
+  { role: 'reviewer', path: '/insights', ready: 'Affiliate compliance' },
   { role: 'reviewer', path: '/review/3', ready: 'Auto suggestions' },
   { role: 'reviewer', path: '/review/5', ready: 'What changed' },
   { role: 'reviewer', path: '/review/6', ready: 'No affiliate disclosure on this page' },
@@ -73,7 +74,7 @@ for (const width of [1024, 1280, 1440]) {
   test(`layout holds at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await setRole(page, 'reviewer')
-    for (const path of ['/queue', '/review/3', '/history']) {
+    for (const path of ['/queue', '/review/3', '/history', '/insights']) {
       await page.goto(path)
       await page.waitForLoadState('networkidle')
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)

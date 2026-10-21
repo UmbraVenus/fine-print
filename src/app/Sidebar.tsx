@@ -27,6 +27,7 @@ function navItems(role: Role, pending: number | null): NavItem[] {
   return [
     { to: '/queue', label: 'Queue', icon: 'inbox', badge: pending },
     { to: '/history', label: 'History', icon: 'history' },
+    { to: '/insights', label: 'Insights', icon: 'chart' },
     { to: '/rules', label: 'Rules', icon: 'book' },
   ]
 }

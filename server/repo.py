@@ -172,8 +172,9 @@ def my_ads_stats(db: Db, now: datetime) -> list[dict]:
 
 
 def reviewed_by_you(db: Db, start: datetime, end: datetime) -> int:
+    """Ads you made a decision on: an ad you sent back twice counts once."""
     return db.scalar(
-        "SELECT COUNT(*) FROM events WHERE type = 'decision' AND at >= ? AND at < ? "
+        "SELECT COUNT(DISTINCT ad_id) FROM events WHERE type = 'decision' AND at >= ? AND at < ? "
         "AND json_extract(detail, '$.by_you') = 1", (iso(start), iso(end)))
 
 
@@ -316,3 +317,94 @@ def ad_detail(db: Db, ad_id: int) -> dict | None:
     if ad_id in attention:
         detail["attention"] = _position(attention, ad_id)
     return detail
+
+
+# ---------------------------------------------------------------- insights
+
+INSIGHT_WEEKS = 9  # the 8 weeks with Fine Print, plus the week before it as the baseline
+WORKING_DAY_HOURS = 8
+
+
+def _week(now: datetime, weeks_ago: int) -> tuple[datetime, datetime]:
+    """Rolling week `weeks_ago` (0 = the last 7 days), as on History."""
+    end = now + timedelta(days=1) if weeks_ago == 0 else now - timedelta(days=7 * weeks_ago)
+    return now - timedelta(days=7 * (weeks_ago + 1)), end
+
+
+def rounds_per_ad(db: Db, start: datetime, end: datetime) -> float | None:
+    rows = _closed_between(db, start, end, APPROVED)
+    return round(sum(r["current_version"] for r in rows) / len(rows), 1) if rows else None
+
+
+def _duration(hours: float) -> str:
+    if hours >= 2 * WORKING_DAY_HOURS:
+        return f"about {round(hours / WORKING_DAY_HOURS)} working days"
+    return f"about {round(hours)} hours"
+
+
+def insights(db: Db, now: datetime) -> dict:
+    """The throughput story, all from the database: now against the week before Fine Print."""
+    weeks = [_week(now, w) for w in reversed(range(INSIGHT_WEEKS))]  # oldest first
+    approved = [approved_in(db, *w) for w in weeks]
+    turnaround = [average_turnaround_hours(db, *w) for w in weeks]
+    rounds = [rounds_per_ad(db, *w) for w in weeks]
+    first_by_week = [first_review_rate(db, *w) for w in weeks]
+    first = first_review_rate(db, now - timedelta(days=30), now + timedelta(days=1))
+    first_then = first_review_rate(db, now - timedelta(days=60), now - timedelta(days=30))
+
+    metrics = []
+    base, latest = approved[0], approved[-1]
+    metrics.append({
+        "key": "approved", "label": "Ads approved per week", "value": latest, "display": str(latest),
+        "trend": _trend(_pct_change(latest, base), "up", "vs. before Fine Print"),
+        "note": f"{'More' if latest >= base else 'Fewer'} ads approved per week than before Fine Print ({base})",
+        "series": approved,
+    })
+    base_t, latest_t = turnaround[0], turnaround[-1]
+    if latest_t is not None and base_t:
+        metrics.append({
+            "key": "turnaround", "label": "Submit to approval", "value": latest_t, "display": f"{latest_t}h",
+            "trend": _trend(_pct_change(latest_t, base_t), "down", "vs. before Fine Print"),
+            "note": f"{'Faster' if latest_t <= base_t else 'Slower'} than before ({_duration(base_t)})",
+            "series": turnaround,
+        })
+    base_r, latest_r = rounds[0], rounds[-1]
+    if latest_r is not None and base_r:
+        metrics.append({
+            "key": "rounds", "label": "Rounds per ad", "value": latest_r, "display": f"{latest_r}",
+            "trend": _trend(_pct_change(latest_r, base_r), "down", "vs. before Fine Print"),
+            "note": f"{'Fewer' if latest_r <= base_r else 'More'} rounds than before (about {round(base_r)})",
+            "series": rounds,
+        })
+    if first is not None and first_then is not None:
+        change = first - first_then
+        note = ("Up from last month, thanks to pre-check" if change > 0
+                else "Down from last month" if change < 0 else "The same as last month")
+        metrics.append({
+            "key": "first_round", "label": "Approved in round 1", "value": first, "display": f"{first}%",
+            "trend": _trend(change, "up", f"vs. {first_then}% last month", unit="pts"),
+            "note": note, "series": first_by_week,
+        })
+
+    # What the auto check flags most, over the 8 weeks.
+    start = weeks[1][0]
+    counts = db.all(
+        """SELECT f.rule_id, r.name, COUNT(*) AS n FROM findings f
+           JOIN ad_versions v ON v.id = f.ad_version_id JOIN rules r ON r.id = f.rule_id
+           WHERE f.origin = 'auto' AND v.submitted_at >= ? GROUP BY f.rule_id, r.name ORDER BY n DESC, r.name""",
+        (iso(start),))
+    total = sum(c["n"] for c in counts)
+    issues = [{"rule_id": c["rule_id"], "name": c["name"], "share": round(c["n"] / total * 100)} for c in counts[:4]] if total else []
+
+    # Each affiliate publisher's score: the share of its ads approved in round 1.
+    publishers = db.all(
+        """SELECT source, COUNT(*) AS n, SUM(current_version = 1) AS first FROM ads
+           WHERE source != 'internal' AND status IN ('approved', 'approved_with_changes', 'rejected')
+             AND closed_at >= ? GROUP BY source""", (iso(start),))
+    affiliates = []
+    for p in publishers:
+        score = round(p["first"] / p["n"] * 100)
+        status = "good" if score >= 85 else "watch" if score >= 60 else "at_risk"
+        affiliates.append({"source": p["source"], "score": score, "ads": p["n"], "status": status})
+    affiliates.sort(key=lambda a: (a["score"], a["source"]))
+    return {"metrics": metrics, "issues": issues, "affiliates": affiliates}

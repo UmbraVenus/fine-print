@@ -157,6 +157,10 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
         result = checker.run_check(db, version_id, now(), context=data.get("context", "re-check"), visitor=visitor)
         return jsonify(result)
 
+    @app.get("/api/insights")
+    def insights():
+        return jsonify(repo.insights(get_db(), now()))
+
     @app.get("/api/nav")
     def nav():
         db = get_db()

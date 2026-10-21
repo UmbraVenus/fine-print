@@ -19,7 +19,7 @@ const ICONS: Record<string, IconName> = {
   target: 'target',
 }
 
-function TrendBadge({ trend }: { trend: NonNullable<Stat['trend']> }) {
+export function TrendBadge({ trend }: { trend: NonNullable<Stat['trend']> }) {
   const text = `${trend.value}${trend.unit === 'pts' ? ' pts' : '%'}`
   const word = trend.direction === 'up' ? 'Up' : 'Down'
   return (

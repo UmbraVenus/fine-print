@@ -8,6 +8,7 @@ import { ROLE_LABEL } from './lib/labels'
 import type { Role } from './lib/types'
 
 // Each page loads when it's first opened, so the first screen arrives sooner.
+const InsightsPage = lazy(() => import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage })))
 const HistoryPage = lazy(() => import('./pages/HistoryPage').then((m) => ({ default: m.HistoryPage })))
 const MyAdsPage = lazy(() => import('./pages/MyAdsPage').then((m) => ({ default: m.MyAdsPage })))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
@@ -20,6 +21,7 @@ const TITLES: Array<[RegExp, string]> = [
   [/^\/my-ads/, 'My ads'],
   [/^\/queue/, 'Queue'],
   [/^\/history/, 'History'],
+  [/^\/insights/, 'Insights'],
   [/^\/rules/, 'Rules'],
   [/^\/review\//, 'Review'],
   [/^\/ads\/.+\/pre-check/, 'Pre-check'],
@@ -60,6 +62,7 @@ function AppRoutes() {
         <Route path="/queue" element={<ForRole role="reviewer"><QueuePage /></ForRole>} />
         <Route path="/review/:id" element={<ForRole role="reviewer"><ReviewPage /></ForRole>} />
         <Route path="/history" element={<ForRole role="reviewer"><HistoryPage /></ForRole>} />
+        <Route path="/insights" element={<ForRole role="reviewer"><InsightsPage /></ForRole>} />
         <Route path="/rules" element={<RulesPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
