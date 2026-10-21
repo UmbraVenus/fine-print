@@ -51,6 +51,7 @@
 - Insights moved back under History (Queue is the Reviewer's home again), with a one-line summary and Open the Queue. Requesting changes on an internal ad puts it in My ads, so it can be Pre-checked and resubmitted. Add a rule removed (owner's call).
 - Coming next takes votes: each roadmap item (in the sidebar, and as a quiet dashed button where it would live: My ads, Rules, History) opens a card with what it would do, "I'd use this", and the count. One vote per feature per browser (an anonymous cookie, deduped in the database); Reset keeps votes. Check: `e2e/coming-next.spec.ts`, `test_votes_count_each_browser_once_and_survive_a_reset`.
 - Insights: Open the Queue sits on the title line; card titles are bigger.
+- "Too small to read" can be fixed in Pre-check: Make it readable sets the layer to 11px (sizes are part of the ad's data; the server accepts 11–48px). On resubmit without a key, What changed counts it resolved. Coming next counts votes, not people.
 
 ## Ideas, not built
 

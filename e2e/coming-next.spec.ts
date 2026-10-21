@@ -9,12 +9,12 @@ test('coming-next features take a vote, once per browser, where they would live 
   await page.getByRole('button', { name: /^Upload your own ads/ }).click()
   const card = page.locator('.ant-popover')
   await expect(card.getByText('Drop in an image or a PDF.', { exact: false })).toBeVisible()
-  const before = Number((await card.getByText(/wants? this$/).innerText()).match(/\d+/)![0])
+  const before = Number((await card.getByText(/^\d+ votes?$/).innerText()).match(/\d+/)![0])
   await card.getByRole('button', { name: 'I’d use this' }).click()
   await expect(card.getByText('Thanks, noted')).toBeVisible()
   // A check on the button, and on the same item in the sidebar, says you voted without opening it.
   await expect(page.getByRole('button', { name: /^Upload your own ads/ }).locator('[data-voted="upload"]')).toBeVisible()
-  await expect(card.getByText(/wants? this$/)).toHaveText(before + 1 === 1 ? '1 person wants this' : `${before + 1} people want this`)
+  await expect(card.getByText(/^\d+ votes?$/)).toHaveText(before + 1 === 1 ? '1 vote' : `${before + 1} votes`)
 
   // The same browser can't vote twice: after a reload it's still noted, from the server.
   await page.reload()

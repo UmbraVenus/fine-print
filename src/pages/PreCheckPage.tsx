@@ -73,6 +73,9 @@ function BackLink() {
   )
 }
 
+/** The smallest text size that reads on screen, as the server checks it. */
+const READABLE_SIZE = 11
+
 /** How Swap stands for one suggestion, given the layer's current text. */
 function wordingState(finding: Numbered['finding'], layerText: string | undefined): 'none' | 'ready' | 'used' | 'changed' {
   if (finding.fix_label !== 'Suggested wording' || !finding.quote || !finding.suggested_fix || layerText === undefined) return 'none'
@@ -90,6 +93,8 @@ function PreCheckCard({
   onUseWording,
   onEditOnAd,
   onResolve,
+  size,
+  onMakeReadable,
 }: {
   item: Numbered
   selected: boolean
@@ -100,6 +105,9 @@ function PreCheckCard({
   onUseWording: () => void
   onEditOnAd: () => void
   onResolve: (resolved: boolean) => void
+  /** Text too small to read can be made readable in one click; 'done' once it is. */
+  size: 'none' | 'ready' | 'done'
+  onMakeReadable: () => void
 }) {
   const { n, finding, rule } = item
   const [noteOpen, setNoteOpen] = useState(Boolean(finding.submitter_note))
@@ -169,6 +177,29 @@ function PreCheckCard({
                     {wording === 'used' ? 'Swapped' : 'Swap'}
                   </button>
                 </Tooltip>
+              )
+            }
+          />
+        )}
+        {size !== 'none' && !resolved && (
+          <FixBox
+            label="Suggested size"
+            text={`${READABLE_SIZE}px, the smallest size that reads on screen`}
+            copyable={false}
+            action={
+              editable && (
+                <button
+                  type="button"
+                  className="fp-swap"
+                  disabled={size === 'done'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onMakeReadable()
+                  }}
+                >
+                  <Icon name={size === 'done' ? 'check' : 'arrowUp'} size={14} strokeWidth={2.5} />
+                  {size === 'done' ? 'Readable' : 'Make it readable'}
+                </button>
               )
             }
           />
@@ -319,12 +350,16 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const layerText = (layerId: string | null) => (layerId ? working.layers.find((l) => l.id === layerId)?.text : undefined)
   const goodIds = working.check?.good_rule_ids ?? []
   const editedIds = useMemo(() => {
-    const before = new Map(baseline.map((l) => [l.id, l.text]))
-    return new Set(working.layers.filter((l) => before.get(l.id) !== l.text).map((l) => l.id))
+    const before = new Map(baseline.map((l) => [l.id, l]))
+    return new Set(
+      working.layers.filter((l) => before.get(l.id)?.text !== l.text || before.get(l.id)?.style?.fontSize !== l.style?.fontSize).map((l) => l.id),
+    )
   }, [working.layers, baseline])
 
-  const saveLayer = async (layerId: string, text: string) => {
-    const layers = working.layers.map((l) => (l.id === layerId ? { ...l, text } : l))
+  const saveLayer = async (layerId: string, text: string, fontSize?: number) => {
+    const layers = working.layers.map((l) =>
+      l.id === layerId ? { ...l, text, ...(fontSize ? { style: { ...l.style, fontSize } } : {}) } : l,
+    )
     try {
       await api.put(`/api/ads/${ad.id}/copy`, { layers })
       reload()
@@ -340,6 +375,37 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     await saveLayer(layer_id, text.replace(quote, suggested_fix))
     message.success('Swapped in on the ad. Mark it resolved once it reads right.')
   }
+
+  /** A suggestion about text too small to read can be fixed here: the size is part of the ad's data. */
+  const sizeState = (item: Numbered): 'none' | 'ready' | 'done' => {
+    const layer = working.layers.find((l) => l.id === item.finding.layer_id)
+    const before = baseline.find((l) => l.id === item.finding.layer_id)
+    if (item.finding.rule_id !== 'clear-and-conspicuous' || !layer) return 'none'
+    const size = layer.style?.fontSize ?? READABLE_SIZE
+    if (size < READABLE_SIZE) return 'ready'
+    return (before?.style?.fontSize ?? READABLE_SIZE) < READABLE_SIZE ? 'done' : 'none'
+  }
+
+  const makeReadable = async (item: Numbered) => {
+    const layer = working.layers.find((l) => l.id === item.finding.layer_id)
+    if (!layer) return
+    await saveLayer(layer.id, layer.text, READABLE_SIZE)
+    message.success(`Made it ${READABLE_SIZE}px. Mark it resolved once it reads right.`)
+  }
+
+  const cardProps = (item: Numbered) => ({
+    item,
+    selected: selected === item.n,
+    onSelect: () => selectFromCard(item.n),
+    onNote: (note: string) => saveNote(item.finding.id, note),
+    editable,
+    layerText: layerText(item.finding.layer_id),
+    onUseWording: () => applyWording(item),
+    onEditOnAd: () => editOnAd(item.finding.layer_id),
+    onResolve: (r: boolean) => setResolved(item.finding.id, r),
+    size: sizeState(item),
+    onMakeReadable: () => makeReadable(item),
+  })
 
   const editOnAd = (layerId: string | null) => {
     if (!layerId) return
@@ -484,21 +550,21 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
                 {critical.length > 0 && (
                   <Group id="critical" kind="critical" title={`Critical · ${critical.length}`} open={open.critical} onToggle={() => setOpen((o) => ({ ...o, critical: !o.critical }))}>
                     {critical.map((item) => (
-                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} layerText={layerText(item.finding.layer_id)} onUseWording={() => applyWording(item)} onEditOnAd={() => editOnAd(item.finding.layer_id)} onResolve={(r) => setResolved(item.finding.id, r)} />
+                      <PreCheckCard key={item.finding.id} {...cardProps(item)} />
                     ))}
                   </Group>
                 )}
                 {caution.length > 0 && (
                   <Group id="caution" kind="caution" title={`Caution · ${caution.length}`} open={open.caution} onToggle={() => setOpen((o) => ({ ...o, caution: !o.caution }))}>
                     {caution.map((item) => (
-                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} layerText={layerText(item.finding.layer_id)} onUseWording={() => applyWording(item)} onEditOnAd={() => editOnAd(item.finding.layer_id)} onResolve={(r) => setResolved(item.finding.id, r)} />
+                      <PreCheckCard key={item.finding.id} {...cardProps(item)} />
                     ))}
                   </Group>
                 )}
                 {resolvedItems.length > 0 && (
                   <Group id="resolved" kind="resolved" title={`Resolved by you · ${resolvedItems.length}`} open={open.resolved} onToggle={() => setOpen((o) => ({ ...o, resolved: !o.resolved }))}>
                     {resolvedItems.map((item) => (
-                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} layerText={layerText(item.finding.layer_id)} onUseWording={() => applyWording(item)} onEditOnAd={() => editOnAd(item.finding.layer_id)} onResolve={(r) => setResolved(item.finding.id, r)} />
+                      <PreCheckCard key={item.finding.id} {...cardProps(item)} />
                     ))}
                   </Group>
                 )}

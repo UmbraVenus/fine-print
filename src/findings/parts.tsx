@@ -196,7 +196,7 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 /** The words to use, with a button that copies exactly them and any action that puts them on the ad. */
-export function FixBox({ label, text, action }: { label: string; text: string; action?: ReactNode }) {
+export function FixBox({ label, text, action, copyable = true }: { label: string; text: string; action?: ReactNode; copyable?: boolean }) {
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
@@ -221,11 +221,13 @@ export function FixBox({ label, text, action }: { label: string; text: string; a
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 28 }}>
         <span style={{ flexGrow: 1, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#115E59' }}>{label}</span>
-        <Tooltip title={copied ? 'Copied' : 'Copy'}>
-          <button type="button" className="fp-fix-copy" aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`} onClick={copy}>
-            <Icon name={copied ? 'check' : 'copy'} size={16} strokeWidth={copied ? 2.5 : 2} />
-          </button>
-        </Tooltip>
+        {copyable && (
+          <Tooltip title={copied ? 'Copied' : 'Copy'}>
+            <button type="button" className="fp-fix-copy" aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`} onClick={copy}>
+              <Icon name={copied ? 'check' : 'copy'} size={16} strokeWidth={copied ? 2.5 : 2} />
+            </button>
+          </Tooltip>
+        )}
         {/* Last, at the right edge, in line with Mark resolved below the box. */}
         {action}
       </div>

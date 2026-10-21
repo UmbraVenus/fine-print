@@ -72,8 +72,9 @@ export function VotedCheck({ feature, color = '#067647' }: { feature: ComingFeat
   )
 }
 
-function people(n: number): string {
-  return n === 1 ? '1 person wants this' : `${n} people want this`
+/** Counted as votes, not people: nobody needs to know who wanted what. */
+function voteCount(n: number): string {
+  return n === 1 ? '1 vote' : `${n} votes`
 }
 
 /** What a coming-next feature would do, and a vote for it. Opened from the sidebar or where it would live. */
@@ -114,7 +115,7 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
             I’d use this
           </button>
         )}
-        {votes !== null && <span aria-live="polite" style={{ fontSize: 13, color: '#4A5468' }}>{people(votes)}</span>}
+        {votes !== null && <span aria-live="polite" style={{ fontSize: 13, color: '#4A5468' }}>{voteCount(votes)}</span>}
       </div>
       {failed && (
         <span role="alert" style={{ fontSize: 13, color: '#B42318' }}>

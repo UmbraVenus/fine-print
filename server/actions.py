@@ -217,6 +217,15 @@ def _working_version(db: Db, ad: dict, create: bool) -> dict | None:
     return db.one("SELECT * FROM ad_versions WHERE id = ?", (draft_id,))
 
 
+# The smallest text size that reads on screen; a smaller disclosure isn't clear and conspicuous.
+READABLE_SIZE = 11
+
+
+def _font_size(layer: dict) -> float | None:
+    size = (layer.get("style") or {}).get("fontSize")
+    return size if isinstance(size, (int, float)) else None
+
+
 def _validate_layers(version: dict, layers: list) -> list[dict]:
     known = {l["id"]: l for l in json.loads(version["layers"])}
     if not isinstance(layers, list):
@@ -228,7 +237,14 @@ def _validate_layers(version: dict, layers: list) -> list[dict]:
         text = str(layer.get("text", "")).strip()
         if not text:
             raise ActionError("A text layer can't be empty")
-        cleaned.append({**known[layer["id"]], "text": text[:2000]})
+        layer_out = {**known[layer["id"]], "text": text[:2000]}
+        size = _font_size(layer)
+        if size is not None and size != _font_size(known[layer["id"]]):
+            # Only the text size can change here, within what a template can show.
+            if not READABLE_SIZE <= size <= 48:
+                raise ActionError(f"Text size must be between {READABLE_SIZE} and 48")
+            layer_out["style"] = {**(known[layer["id"]].get("style") or {}), "fontSize": size}
+        cleaned.append(layer_out)
     if [l["id"] for l in cleaned] != list(known):
         raise ActionError("Send every layer, in order")
     return cleaned
@@ -248,10 +264,15 @@ def save_copy(db: Db, ad_id: int, layers: list, now: datetime) -> dict:
 def compare_with_previous(db: Db, version_id: int, now: datetime) -> int:
     """
     Without a live check, carry the last check forward: a suggestion whose quoted words are no longer
-    in the copy counts as fixed. Suggestions about something missing stay until a real check runs.
+    in the copy counts as fixed, and so does text that was too small to read and now isn't.
+    Suggestions about something missing stay until a real check runs.
     """
     version = db.one("SELECT * FROM ad_versions WHERE id = ?", (version_id,))
     layers = {l["id"]: l["text"] for l in json.loads(version["layers"])}
+    sizes = {l["id"]: _font_size(l) for l in json.loads(version["layers"])}
+    previous = db.one("SELECT layers FROM ad_versions WHERE ad_id = ? AND version = ?",
+                      (version["ad_id"], version["version"] - 1))
+    sizes_before = {l["id"]: _font_size(l) for l in json.loads(previous["layers"])} if previous else {}
     run = db.one("SELECT * FROM check_runs WHERE ad_version_id = ? ORDER BY id DESC LIMIT 1", (version_id,))
     good = set(json.loads(run["good_rule_ids"])) if run else set()
     checks_run = run["checks_run"] if run else 0
@@ -262,6 +283,9 @@ def compare_with_previous(db: Db, version_id: int, now: datetime) -> int:
     for f in findings:
         text = layers.get(f["layer_id"]) if f["layer_id"] else None
         fixed = f["quote"] is not None and (text is None or f["quote"] not in text)
+        before, after = sizes_before.get(f["layer_id"]), sizes.get(f["layer_id"])
+        if before is not None and after is not None and before < READABLE_SIZE <= after:
+            fixed = True
         if fixed:
             db.run("DELETE FROM findings WHERE id = ?", (f["id"],))
         else:

@@ -119,3 +119,20 @@ def test_precheck_steps_through_the_ads_that_need_attention(db):
     listed = [r["id"] for r in rows if r["status"] in ("draft", "changes_required")]
     assert listed == [first, second]
     assert repo.ad_detail(db, 3)["attention"] is None
+
+
+def test_a_too_small_disclosure_can_be_made_readable(db):
+    actions.decide(db, 3, "changes_required", "Fix the disclosure.", NOW)
+    layers = repo.ad_detail(db, 3)["current"]["layers"]
+    tiny = next(l for l in layers if l["id"] == "disclosure")
+    assert tiny["style"]["fontSize"] < actions.READABLE_SIZE
+    with pytest.raises(ActionError):  # still too small
+        actions.save_copy(db, 3, [{**l, "style": {"fontSize": 9}} if l["id"] == "disclosure" else l for l in layers], NOW)
+    draft = actions.save_copy(db, 3, [{**l, "style": {"fontSize": 11}} if l["id"] == "disclosure" else l for l in layers], NOW)
+    saved = next(l for l in draft["layers"] if l["id"] == "disclosure")
+    assert saved["style"]["fontSize"] == 11 and saved["text"] == tiny["text"]
+    # Resubmitted without a key: the size fix resolves "too small to read".
+    actions.submit(db, 3, NOW)
+    open_rules = {f["rule_id"] for f in repo.ad_detail(db, 3)["current"]["findings"] if f["origin"] == "auto"}
+    assert "clear-and-conspicuous" not in open_rules
+    assert "rate-claims" in open_rules  # the words weren't touched
