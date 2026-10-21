@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { resetData, setRole } from './helpers.ts'
+import { nextAfter, queueOrder, resetData, setRole } from './helpers.ts'
 
 test.use({ viewport: { width: 1280, height: 900 } })
 
@@ -9,9 +9,10 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('the review page is prepared: groups, pins, rule info', async ({ page }) => {
+  const order = await queueOrder(page)
   await page.goto('/review/3')
   await expect(page.getByRole('heading', { level: 1, name: 'Fall personal loan' })).toBeVisible()
-  await expect(page.getByText('3 of 9')).toBeVisible()
+  await expect(page.getByText(`${order.findIndex((r) => r.id === 3) + 1} of 9`)).toBeVisible()
   await expect(page.getByText('Due today')).toBeVisible()
   await expect(page.getByRole('button', { name: /Critical · 1/ })).toHaveAttribute('aria-expanded', 'true')
   await expect(page.getByRole('button', { name: /Caution · 2/ })).toHaveAttribute('aria-expanded', 'true')
@@ -46,6 +47,7 @@ test('keep, edit, dismiss with a reason, restore', async ({ page }) => {
 })
 
 test('reviewer requests changes on Fall personal loan', async ({ page }) => {
+  const order = await queueOrder(page)
   await page.goto('/review/3')
   await page.locator('[data-finding="1"]').getByRole('button', { name: 'Keep' }).click()
   await page.getByRole('button', { name: 'Add a finding' }).click()
@@ -59,8 +61,9 @@ test('reviewer requests changes on Fall personal loan', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Request changes' }).click()
   await expect(page.getByText('Changes requested ·')).toBeVisible()
   // The next ad in the queue opens in the same tab.
-  await expect(page).toHaveURL(/\/review\/4$/)
-  await expect(page.getByRole('heading', { level: 1, name: 'Rate check email' })).toBeVisible()
+  const next = nextAfter(order, 3)
+  await expect(page).toHaveURL(new RegExp(`/review/${next}$`))
+  await expect(page.getByRole('heading', { level: 1, name: order.find((r) => r.id === next)!.name })).toBeVisible()
   await expect(page.getByRole('link', { name: /Queue/ }).first()).toBeVisible()
   await expect(page.locator('.fp-nav-badge')).toHaveText('8')
 
@@ -73,9 +76,10 @@ test('reviewer requests changes on Fall personal loan', async ({ page }) => {
 })
 
 test('approve shows Undo, and Undo restores everything', async ({ page }) => {
+  const order = await queueOrder(page)
   await page.goto('/review/4')
   await page.getByRole('button', { name: 'Approve', exact: true }).click()
-  await expect(page).toHaveURL(/\/review\/5$/)
+  await expect(page).toHaveURL(new RegExp(`/review/${nextAfter(order, 4)}$`))
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(page.getByText('Decision undone')).toBeVisible()
   await expect(page).toHaveURL(/\/review\/4$/)
@@ -84,13 +88,15 @@ test('approve shows Undo, and Undo restores everything', async ({ page }) => {
 })
 
 test('previous and next follow the queue order', async ({ page }) => {
-  await page.goto('/review/3')
+  const order = await queueOrder(page)
+  await page.goto(`/review/${order[2].id}`)
+  await expect(page.getByText('3 of 9')).toBeVisible()
   await page.getByRole('link', { name: 'Next' }).click()
   await expect(page.getByText('4 of 9')).toBeVisible()
   await page.getByRole('link', { name: 'Previous' }).click()
   await page.getByRole('link', { name: 'Previous' }).click()
   await expect(page.getByText('2 of 9')).toBeVisible()
-  await expect(page.getByRole('heading', { level: 1, name: 'Card payoff story' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: order[1].name })).toBeVisible()
 })
 
 test('what changed on a resubmission', async ({ page }) => {

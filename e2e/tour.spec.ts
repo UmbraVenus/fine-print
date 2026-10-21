@@ -24,7 +24,8 @@ test('README tour', async ({ page }) => {
   // 3. Request changes.
   await page.getByRole('button', { name: 'Request changes' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Request changes' }).click()
-  await expect(page).toHaveURL(/\/review\/4$/)
+  await expect(page).toHaveURL(/\/review\/\d+$/)
+  await expect(page).not.toHaveURL(/\/review\/3$/)
 
   // 4. Switch to Marketer.
   await page.locator('.fp-role-button').click()

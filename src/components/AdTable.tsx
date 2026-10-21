@@ -23,12 +23,14 @@ interface ViewConfig {
   defaultOrder: 'asc' | 'desc'
   /** A second date column: both My ads and the Queue show Updated and Due. */
   secondTitle?: string
+  /** Which date column sorts the table at first: the main one, or the second (the Queue starts by Updated). */
+  defaultSort?: 'date' | 'second'
   empty: string
 }
 
 const VIEWS: Record<TableView, ViewConfig> = {
   'my-ads': { statusTitle: 'Status', statusKey: 'status', dateTitle: 'Updated', secondTitle: 'Due', defaultOrder: 'desc', empty: 'No ads yet.' },
-  queue: { statusTitle: 'Auto check', statusKey: 'auto_check', dateTitle: 'Due', secondTitle: 'Updated', defaultOrder: 'asc', empty: 'Queue cleared. Go get a snack.' },
+  queue: { statusTitle: 'Auto check', statusKey: 'auto_check', dateTitle: 'Due', secondTitle: 'Updated', defaultSort: 'second', defaultOrder: 'desc', empty: 'Queue cleared. Go get a snack.' },
   history: { statusTitle: 'Decision', statusKey: 'status', dateTitle: 'Closed', defaultOrder: 'desc', empty: 'No approved ads yet.' },
 }
 
@@ -72,10 +74,10 @@ function myAdsSubLine(row: AdRow, today: string): string {
   }
 }
 
-/** A due date: Today, Tomorrow, or a day; red when it has passed. */
+/** A due date: Today, Tomorrow, or a day; a past one is in the "needs action" color, not alarm red. */
 function DueDate({ day, today }: { day: string; today: string }) {
   if (daysBetween(today, day) < 0) {
-    return <span style={{ color: '#B42318', fontWeight: 600 }}>Overdue · {shortDate(day, today)}</span>
+    return <span style={{ color: '#A15C07', fontWeight: 600 }}>{shortDate(day, today)}</span>
   }
   return <>{dayLabel(day, today)}</>
 }
@@ -280,7 +282,7 @@ export function AdTable({
   const [, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [q, setQ] = useState('')
-  const [sort, setSort] = useState<{ key: 'name' | 'date' | 'second' | 'check'; order: 'asc' | 'desc' }>({ key: 'date', order: config.defaultOrder })
+  const [sort, setSort] = useState<{ key: 'name' | 'date' | 'second' | 'check'; order: 'asc' | 'desc' }>({ key: config.defaultSort ?? 'date', order: config.defaultOrder })
   const [pageSize, setPageSize] = useState(10)
   const params = query({
     view,

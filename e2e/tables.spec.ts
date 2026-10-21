@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { resetData, setRole } from './helpers.ts'
+import { queueOrder, resetData, setRole } from './helpers.ts'
 
 test.use({ viewport: { width: 1280, height: 900 } })
 
@@ -11,15 +11,14 @@ function stat(page: import('@playwright/test').Page, key: string) {
   return page.locator(`[data-stat="${key}"] [data-stat-value]`)
 }
 
-test('queue: 9 waiting, 4 due today, sorted by due date', async ({ page }) => {
+test('queue: 9 waiting, 4 due today, most recently updated first', async ({ page }) => {
   await setRole(page, 'reviewer')
   await page.goto('/queue')
   await expect(stat(page, 'waiting')).toHaveText('9')
   await expect(stat(page, 'due_today')).toHaveText('4')
   const names = page.locator('.fp-ad-link')
   await expect(names).toHaveCount(9)
-  await expect(names.nth(0)).toHaveText('Best loans of 2026')
-  await expect(names.nth(2)).toHaveText('Fall personal loan')
+  await expect(names).toHaveText((await queueOrder(page)).map((r) => r.name))
   await expect(page.getByText('Showing 1–9 of 9')).toBeVisible()
   await expect(page.getByRole('link', { name: /^Review / })).toHaveCount(9)
   await page.screenshot({ path: 'screenshots/m3-queue.png', fullPage: true })
@@ -54,7 +53,8 @@ test('search, with an empty state', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Search ads' }).fill('zzz')
   await expect(page.getByText('No ads match your search.')).toBeVisible()
   await page.getByRole('textbox', { name: 'Search ads' }).fill('card')
-  await expect(page.locator('.fp-ad-link')).toHaveText(['Card payoff story', 'Student card post'])
+  await expect(page.locator('.fp-ad-link')).toHaveCount(2)
+  expect((await page.locator('.fp-ad-link').allInnerTexts()).sort()).toEqual(['Card payoff story', 'Student card post'])
 })
 
 test('history: computed numbers and pagination', async ({ page }) => {

@@ -16,7 +16,7 @@ VIEW_WHERE = {
     "history": "a.status IN ('approved', 'approved_with_changes')",
 }
 DATE_COLUMN = {"my-ads": "a.updated_at", "queue": "a.due_date", "history": "a.closed_at"}
-DEFAULT_SORT = {"my-ads": ("date", "desc"), "queue": ("date", "asc"), "history": ("date", "desc")}
+DEFAULT_SORT = {"my-ads": ("date", "desc"), "queue": ("second", "desc"), "history": ("date", "desc")}
 
 OPEN_AUTO = "f.origin = 'auto' AND f.state != 'dismissed' AND f.ad_version_id = v.id"
 ROW_SELECT = f"""
@@ -115,8 +115,8 @@ def _attach_row_details(db: Db, view: str, rows: list[dict]) -> None:
 
 
 def queue_order(db: Db) -> list[int]:
-    return [r["id"] for r in db.all(f"SELECT id, name, due_date FROM ({ROW_SELECT} WHERE a.status = 'pending') "
-                                     "ORDER BY due_date ASC, name COLLATE NOCASE ASC, id")]
+    """The Queue's own order, most recently updated first, so Review's "3 of 9" matches the table."""
+    return [r["id"] for r in db.all("SELECT id FROM ads WHERE status = 'pending' ORDER BY updated_at DESC, id DESC")]
 
 
 def attention_order(db: Db) -> list[int]:

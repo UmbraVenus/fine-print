@@ -5,7 +5,12 @@ import { useEffect } from 'react'
  * when you first came (or last reset), and when you last opened each ad.
  */
 const SINCE_KEY = 'fp_seen_since'
-const SEEN_KEY = 'fp_seen'
+
+/** Each role has its own marks: a reviewer opening an ad doesn't mean the marketer has seen the change. */
+function seenKey(): string {
+  const role = /(?:^|;\s*)fp_role=marketer/.test(document.cookie) ? 'marketer' : 'reviewer'
+  return `fp_seen_${role}`
+}
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -27,21 +32,27 @@ function write(key: string, value: unknown) {
 function since(): string {
   const saved = read<string | null>(SINCE_KEY, null)
   if (saved) return saved
-  const now = new Date().toISOString()
+  const now = wholeSecond()
   write(SINCE_KEY, now)
   return now
 }
 
+/** The server keeps times to the second; a change in the same second as this must still count as newer. */
+function wholeSecond(): string {
+  return new Date(Math.floor(Date.now() / 1000) * 1000 - 1000).toISOString()
+}
+
 /** Start over: nothing counts as updated before now (after a reset, the sample data is all new). */
 export function resetSeen() {
-  write(SINCE_KEY, new Date().toISOString())
-  write(SEEN_KEY, {})
+  write(SINCE_KEY, wholeSecond())
+  write('fp_seen_marketer', {})
+  write('fp_seen_reviewer', {})
 }
 
 /** True when the ad changed after you last opened it (and after your first visit). */
 export function isUpdated(adId: number, updatedAt: string | null | undefined): boolean {
   if (!updatedAt) return false
-  const seen = read<Record<string, string>>(SEEN_KEY, {})[adId] ?? since()
+  const seen = read<Record<string, string>>(seenKey(), {})[adId] ?? since()
   return Date.parse(updatedAt) > Date.parse(seen)
 }
 
@@ -49,8 +60,8 @@ export function isUpdated(adId: number, updatedAt: string | null | undefined): b
 export function useMarkSeen(adId: number | null, updatedAt: string | null | undefined) {
   useEffect(() => {
     if (adId === null) return
-    const seen = read<Record<string, string>>(SEEN_KEY, {})
+    const seen = read<Record<string, string>>(seenKey(), {})
     seen[adId] = new Date(Math.max(Date.now(), updatedAt ? Date.parse(updatedAt) : 0)).toISOString()
-    write(SEEN_KEY, seen)
+    write(seenKey(), seen)
   }, [adId, updatedAt])
 }

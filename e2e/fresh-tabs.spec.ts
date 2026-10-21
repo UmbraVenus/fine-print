@@ -38,3 +38,21 @@ test('an ad that changed since you last opened it is marked Updated, until you o
   await page.reload()
   await expect(page.locator('.fp-updated-chip')).toHaveCount(0)
 })
+
+test('the reviewer opening an ad does not clear it for the marketer', async ({ page }) => {
+  await resetData(page)
+  await setRole(page, 'marketer')
+  await page.goto('/my-ads')
+  await expect(page.locator('tbody tr.ant-table-row')).toHaveCount(8)
+  // In the same browser, the reviewer opens Fall personal loan and sends it back.
+  await setRole(page, 'reviewer')
+  await page.goto('/review/3')
+  await page.getByRole('button', { name: 'Request changes' }).click()
+  await page.getByRole('dialog').getByRole('textbox').fill('Fix the rate claim.')
+  await page.getByRole('dialog').getByRole('button', { name: 'Request changes' }).click()
+  await expect(page).not.toHaveURL(/\/review\/3$/)
+  // The marketer still sees it as updated.
+  await setRole(page, 'marketer')
+  await page.goto('/my-ads')
+  await expect(page.locator('tbody tr', { hasText: 'Fall personal loan' }).locator('.fp-updated-chip')).toHaveText('Updated')
+})

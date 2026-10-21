@@ -47,8 +47,9 @@ def test_request_changes_sends_kept_and_reviewer_findings(db):
     actions.add_reviewer_finding(db, 3, "Pick another photo.", NOW)
     with pytest.raises(ActionError):
         actions.decide(db, 3, "changes_required", "", NOW)
+    order = repo.queue_order(db)
     result = actions.decide(db, 3, "changes_required", "Please fix the rate claim.", NOW)
-    assert result["next"] == 4  # Rate check email follows Fall personal loan
+    assert result["next"] == order[order.index(3) + 1]  # the next ad in the Queue's order
     ad = db.one("SELECT * FROM ads WHERE id = 3")
     assert ad["status"] == "changes_required" and ad["closed_at"] is None
     sent = [f for f in current_findings(db, 3) if f["sent_to_submitter"]]

@@ -26,7 +26,6 @@ import {
   type Numbered,
 } from '../findings/parts'
 import { api, ApiError } from '../lib/api'
-import { dayPhrase } from '../lib/dates'
 import { sentText, type AdDetail, type Finding, type Version } from '../lib/detail'
 import { PRODUCT_LABEL } from '../lib/labels'
 import type { Layer } from '../lib/types'
@@ -342,7 +341,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const { ad, rules } = detail
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
-  const { refresh, today } = useWorkspace()
+  const { refresh } = useWorkspace()
   const editable = ad.status === 'draft' || ad.status === 'changes_required'
   const working: Version = (editable && detail.draft) || detail.current
   // Edits are marked against the copy the marketer started from.
@@ -493,7 +492,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     try {
       const result = await api.post<{ due_date: string; version: number }>(`/api/ads/${ad.id}/submit`)
       refresh()
-      message.success(`Sent for review${result.version > 1 ? ` as version ${result.version}` : ''}. You'll hear back by ${dayPhrase(result.due_date, today)}.`)
+      message.success(`Sent for review${result.version > 1 ? ` as version ${result.version}` : ''}. Your reviewer takes it from here.`)
       navigate('/my-ads')
     } catch (e) {
       message.error(e instanceof ApiError ? e.message : "Couldn't submit. Try again.")

@@ -21,11 +21,11 @@ def test_queue_counts(db):
     assert sum(1 for r in queue["rows"] if r["due_date"] == today) == 4
 
 
-def test_queue_order_matches_wireframe(db):
-    names = [r["name"] for r in repo.list_ads(db, "queue")["rows"]]
-    assert names[:5] == ["Best loans of 2026", "Card payoff story", "Fall personal loan", "Rate check email",
-                         "Dream home banner"]
-    assert names.index("Fall personal loan") == 2  # "3 of 9"
+def test_queue_order_is_most_recently_updated_first(db):
+    rows = repo.list_ads(db, "queue")["rows"]
+    assert [r["updated_at"] for r in rows] == sorted((r["updated_at"] for r in rows), reverse=True)
+    # Review's Previous / "n of 9" / Next follows the same order as the table.
+    assert [r["id"] for r in rows] == repo.queue_order(db)[:len(rows)]
 
 
 def test_my_ads(db):
