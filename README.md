@@ -16,7 +16,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env          # optional: add ANTHROPIC_API_KEY for live checks
 
-npm run dev:api               # Flask API on :8000 (reads .env)
+npm run dev:api               # Flask API on :8000 (reads .env; variables already set in your shell win)
 npm run dev                   # the app on http://localhost:5173 (proxies /api to Flask)
 ```
 
