@@ -1,75 +1,53 @@
-# React + TypeScript + Vite
+# Fine Print
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A marketing-compliance review tool for ClearPath Financial (a fictional consumer lender). Marketers pre-check their ads against the compliance rules. Reviewers work a queue, where an AI auto check has already flagged likely issues.
 
-Currently, two official plugins are available:
+_The full overview and headline number come in M8._
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack
 
-## React Compiler
+- **Frontend:** React 19 + TypeScript (strict) + Vite, with antd v6 and `@ant-design/icons`. The theme is built from `docs/design-system/tokens.json` (`src/theme.ts`). Inter and IBM Plex Mono are self-hosted via `@fontsource`.
+- **Backend:** Flask (Python) in `api/`, served as a Vercel Python function. Every route starts with `/api/`.
+- **AI:** the Anthropic Python SDK, server-side only.
+- **Tests:** Vitest (frontend logic), pytest (API), Playwright (end to end).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## How to run
 
-## Expanding the ESLint configuration
+Requires Node 22+ and Python 3.12+.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+npm install
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env   # fill in ANTHROPIC_API_KEY if you have one
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+npm run dev:api        # Flask on :8000
+npm run dev            # Vite on :5173, proxies /api to Flask
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Checks
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Command | What it runs |
+| --- | --- |
+| `npm run lint` | ESLint |
+| `npm run build` | Type check + production build |
+| `npm test` | Vitest unit tests |
+| `npm run test:api` | pytest for the Flask API (venv active) |
+| `npm run test:e2e` | Playwright (starts both servers). It uses `/opt/pw-browsers/chromium` or `CHROMIUM_PATH` when present; otherwise run `npx playwright install chromium` once. |
+| `npm run smoke:anthropic` | One tiny Anthropic call ("reply ok") using `ANTHROPIC_API_KEY` |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Environment variables
 
-```
+See `.env.example`: `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`).
+
+## How to deploy
+
+_Written in M8 (Vercel + Turso + env vars)._
+
+## Assumptions
+
+_Written in M8._
+
+## What's next
+
+_Written in M8._

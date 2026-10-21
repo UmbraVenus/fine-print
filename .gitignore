@@ -28,7 +28,15 @@ dist-ssr
 __pycache__/
 
 # Secrets
-.env
+.env*
+!.env.example
+
+# Local data and test output
+*.db
+*.db-journal
+test-results/
+playwright-report/
+.pytest_cache/
 
 # Claude Code local
 .claude/worktrees/

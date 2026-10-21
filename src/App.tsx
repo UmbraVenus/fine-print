@@ -1,19 +1,8 @@
-import { useEffect, useState } from 'react'
-
+// Placeholder until the layout shell lands in M2.
 function App() {
-  const [backend, setBackend] = useState('checking…')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
-      .then((data) => setBackend(`Backend: ${data.status}`))
-      .catch(() => setBackend('backend unreachable'))
-  }, [])
-
   return (
-    <main>
-      <h1>Fine Print</h1>
-      <p>{backend}</p>
+    <main className="fp-main">
+      <h1 className="fp-page-title">Fine Print</h1>
     </main>
   )
 }
