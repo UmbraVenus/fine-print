@@ -15,7 +15,7 @@ import { useApi } from '../lib/useApi'
 import { DecisionBar, type Decision } from '../review/DecisionBar'
 import { DismissedCard, ReviewSuggestionCard, type SuggestionActions } from '../review/SuggestionCards'
 import { CompareVersions, WhatChanged, compareMarkers, openItems } from '../review/WhatChanged'
-import { compareVersions } from '../review/whatChanged'
+import { compareVersions } from '../review/compare'
 import { YourFindings } from '../review/YourFindings'
 
 const DONE_LABEL: Record<Decision, string> = {

@@ -5,7 +5,7 @@ import { SeverityTag } from '../components/StatusTag'
 import { Group, NumberBadge, cardStyle, type Numbered } from '../findings/parts'
 import type { Rule } from '../lib/detail'
 import { ReviewSuggestionCard, type SuggestionActions } from './SuggestionCards'
-import { previousSummary, type Comparison } from './whatChanged'
+import { previousSummary, type Comparison } from './compare'
 
 /** Still-open and new suggestions, numbered after the resolved ones so every pin on v2 is unique. */
 export function openItems(comparison: Comparison, rules: Rule[]): { stillOpen: Numbered[]; added: Numbered[] } {

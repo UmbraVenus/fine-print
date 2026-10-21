@@ -14,6 +14,6 @@ export default defineConfig({
     proxy: { '/api': 'http://localhost:8000' },
   },
   test: {
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'tests/repo/*.test.ts'],
   },
 })
