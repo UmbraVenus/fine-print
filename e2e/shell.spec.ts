@@ -15,7 +15,7 @@ test('reviewer nav, with the pending count', async ({ page }) => {
 
 test('switching role sets the cookie, changes the nav and goes home', async ({ page }) => {
   await page.goto('/queue')
-  await page.getByRole('button', { name: /Viewing as/i }).click()
+  await page.locator('.fp-role-button').click()
   await page.getByRole('menuitem', { name: /Marketer/ }).click()
   await expect(page).toHaveURL(/\/my-ads$/)
   const nav = page.getByRole('navigation', { name: 'Main' })

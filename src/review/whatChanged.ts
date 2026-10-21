@@ -27,6 +27,12 @@ function quoteShort(text: string, max = 70): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text
 }
 
+/** “Words” as the end of a sentence, without doubling the quote's own full stop. */
+function quoted(text: string, max = 70): string {
+  const short = quoteShort(text, max)
+  return /[.!?…]$/.test(short) ? `“${short}”` : `“${short}”.`
+}
+
 /**
  * Compare what was sent back on the previous version with the current version's check,
  * by rule and layer: gone means resolved, still there means still open, and anything else is new.
@@ -58,15 +64,15 @@ export function compareVersions(detail: AdDetail): Comparison | null {
       if (!finding.layer_id) {
         const layer = added[addedIndex++]
         if (layer) {
-          how = `Added “${quoteShort(layer.text)}”.`
+          how = `Added ${quoted(layer.text)}`
           layerId = layer.id
         }
       } else if (before && !after) {
-        how = `Removed “${quoteShort(finding.quote ?? before.text)}”.`
+        how = `Removed ${quoted(finding.quote ?? before.text)}`
       } else if (before && after && before.text !== after.text) {
         how = finding.quote && !after.text.includes(finding.quote)
-          ? `Reworded “${quoteShort(finding.quote, 60)}”.`
-          : `Changed to “${quoteShort(after.text)}”.`
+          ? `Reworded ${quoted(finding.quote, 60)}`
+          : `Changed to ${quoted(after.text)}`
         layerId = after.id
       }
       return { n: i + 1, finding, rule: finding.rule_id ? byRule.get(finding.rule_id) ?? null : null, how, layerId }

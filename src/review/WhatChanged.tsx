@@ -86,7 +86,13 @@ export function WhatChanged({
   actions: SuggestionActions
   readOnly: boolean
 }) {
-  const [open, setOpen] = useState({ resolved: true, stillOpen: false, added: false })
+  const [userOpen, setOpen] = useState({ resolved: true, stillOpen: false, added: false })
+  // Picking a pin on the ad opens the group its card is in.
+  const open = {
+    resolved: userOpen.resolved || comparison.resolved.some((r) => r.n === selected),
+    stillOpen: userOpen.stillOpen || stillOpen.some((x) => x.n === selected),
+    added: userOpen.added || added.some((x) => x.n === selected),
+  }
   const openFindings = [...stillOpen, ...added]
   const critical = openFindings.filter((x) => x.finding.severity === 'critical').length
   const caution = openFindings.filter((x) => x.finding.severity === 'caution').length
@@ -115,7 +121,7 @@ export function WhatChanged({
         kind="resolved"
         title={`Resolved · ${comparison.resolved.length}`}
         open={open.resolved}
-        onToggle={() => setOpen((o) => ({ ...o, resolved: !o.resolved }))}
+        onToggle={() => setOpen((o) => ({ ...o, resolved: !open.resolved }))}
       >
         {comparison.resolved.length === 0 && <p style={{ margin: 0, fontSize: 14, color: '#4A5468' }}>Nothing from version {comparison.previous.version} is resolved yet.</p>}
         {comparison.resolved.map((item) => (
@@ -142,7 +148,7 @@ export function WhatChanged({
         kind="neutral"
         title={`Still open · ${stillOpen.length}`}
         open={open.stillOpen}
-        onToggle={() => setOpen((o) => ({ ...o, stillOpen: !o.stillOpen }))}
+        onToggle={() => setOpen((o) => ({ ...o, stillOpen: !open.stillOpen }))}
       >
         {stillOpen.length === 0 && <p style={{ margin: 0, fontSize: 14, color: '#4A5468' }}>Everything sent back was fixed.</p>}
         {stillOpen.map((item) => (
@@ -155,7 +161,7 @@ export function WhatChanged({
         kind="neutral"
         title={`New suggestions · ${added.length}`}
         open={open.added}
-        onToggle={() => setOpen((o) => ({ ...o, added: !o.added }))}
+        onToggle={() => setOpen((o) => ({ ...o, added: !open.added }))}
       >
         {added.length === 0 && <p style={{ margin: 0, fontSize: 14, color: '#4A5468' }}>The new version didn't raise anything new.</p>}
         {added.map((item) => (

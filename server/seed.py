@@ -32,7 +32,8 @@ class Clock:
         if moment > self.now:
             # Earlier today than the wireframe's hour: keep it today, a little before now.
             start_of_day = at_local(self.today, 0)
-            moment = max(start_of_day, self.now - timedelta(minutes=10 + hour))
+            # Earlier wireframe hours stay earlier: 9am lands before 11am.
+            moment = max(start_of_day, self.now - timedelta(minutes=(24 - hour) * 2))
         return moment
 
 

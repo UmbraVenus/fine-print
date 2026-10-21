@@ -52,7 +52,8 @@ test('full loop: fix, resubmit, what changed, approve, history', async ({ page }
   await expect(precheck).toHaveURL(/\/ads\/2\/pre-check$/)
   await expect(precheck.getByRole('heading', { name: 'From your reviewer' })).toBeVisible()
   await expect(precheck.getByText('Add the APR range and say autopay is optional.')).toBeVisible()
-  await precheck.getByRole('button', { name: /^Edit body: Roll this season/ }).click()
+  await expect(precheck.getByRole('button', { name: /^Edit body: Roll this season/ })).toHaveCount(1)
+  await precheck.locator('[data-layer="body"] .fp-editable').click()
   const editor = precheck.getByRole('textbox', { name: 'Edit text' })
   await editor.fill(
     "Roll this season's card balances into one fixed monthly payment. Fixed rates from 8.99% to 29.99% APR with autopay. Autopay is optional.",

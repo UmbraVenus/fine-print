@@ -3,12 +3,15 @@ import { Sidebar } from './Sidebar'
 
 const COLLAPSED_KEY = 'fp_sidebar_collapsed'
 
+// Narrow windows start with the sidebar collapsed, unless the viewer chose otherwise.
 function readCollapsed(): boolean {
   try {
-    return window.localStorage.getItem(COLLAPSED_KEY) === '1'
+    const stored = window.localStorage.getItem(COLLAPSED_KEY)
+    if (stored !== null) return stored === '1'
   } catch {
-    return false
+    // No saved choice.
   }
+  return window.innerWidth < 1100
 }
 
 export function Shell({ children }: { children: ReactNode }) {

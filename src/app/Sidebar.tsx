@@ -132,12 +132,14 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               })),
             }}
           >
-            <button type="button" aria-labelledby="viewas role-name" className="fp-role-button">
+            <button type="button" aria-describedby="viewas" className="fp-role-button">
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <span id="role-name" style={{ fontSize: 15, fontWeight: 700 }}>
                   {ROLE_LABEL[role].name}
                 </span>
-                <span style={{ fontSize: 12, color: '#AEB8CC' }}>{ROLE_LABEL[role].team}</span>
+                <span id="role-team" style={{ fontSize: 12, color: '#AEB8CC' }}>
+                  {ROLE_LABEL[role].team}
+                </span>
               </span>
               <Icon name="chevronDown" size={18} strokeWidth={2.2} />
             </button>

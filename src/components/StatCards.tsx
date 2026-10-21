@@ -56,7 +56,9 @@ export function StatCards({ stats }: { stats: Stat[] }) {
           key={stat.key}
           data-stat={stat.key}
           style={{
-            minWidth: 240,
+            flex: '1 1 0',
+            minWidth: 200,
+            maxWidth: 264,
             background: '#FFFFFF',
             border: '1px solid #E3E6EC',
             borderRadius: 14,

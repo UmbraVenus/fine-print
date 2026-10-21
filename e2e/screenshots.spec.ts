@@ -1,0 +1,95 @@
+import { expect, test, type Page } from '@playwright/test'
+import { resetData, setRole } from './helpers.ts'
+
+// One screenshot per wireframe, at the wireframes' 1280px width, for side-by-side comparison.
+test.use({ viewport: { width: 1280, height: 900 } })
+
+test.beforeEach(async ({ page }) => {
+  await resetData(page)
+})
+
+async function shoot(page: Page, name: string) {
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(300)
+  // Grow the window to the page, so the sticky decision bar sits at the very bottom like the wireframes.
+  const height = await page.evaluate(() => document.documentElement.scrollHeight)
+  await page.setViewportSize({ width: 1280, height: Math.max(900, height) })
+  await page.waitForTimeout(200)
+  await page.screenshot({ path: `screenshots/final/${name}.png` })
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
+
+test('01 my ads, 02 view drawer, 03 pre-check', async ({ page }) => {
+  await setRole(page, 'marketer')
+  await page.goto('/my-ads')
+  await expect(page.getByText('Holiday debt email')).toBeVisible()
+  await shoot(page, '01-my-ads')
+  await page.goto('/my-ads')
+  await expect(page.getByText('Holiday debt email')).toBeVisible()
+  await page.locator('th', { hasText: 'Format' }).locator('.ant-table-filter-trigger').click()
+  await page.getByRole('checkbox', { name: 'Email' }).check()
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: 'screenshots/final/01-my-ads-filter.png' })
+  await page.keyboard.press('Escape')
+  await page.goto('/my-ads?view=12')
+  await expect(page.getByText('BEFORE IT GOES LIVE')).toBeVisible()
+  await page.screenshot({ path: 'screenshots/final/02-view-drawer.png' })
+  await page.goto('/ads/1/pre-check')
+  await expect(page.getByText('Auto suggestions')).toBeVisible()
+  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Add a note' }).click()
+  await page.getByRole('button', { name: /^Finding 1:/ }).click()
+  await shoot(page, '03-pre-check')
+  await page.goto('/ads/2/pre-check')
+  await expect(page.getByText('From your reviewer')).toBeVisible()
+  await shoot(page, '03-pre-check-changes-required')
+})
+
+test('04 queue, 05 review, 06 what changed, 07 other formats, 08 history', async ({ page }) => {
+  await setRole(page, 'reviewer')
+  await page.goto('/queue')
+  await expect(page.getByText('Best loans of 2026')).toBeVisible()
+  await shoot(page, '04-queue')
+  await page.goto('/review/3')
+  await expect(page.getByText('Auto suggestions')).toBeVisible()
+  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Keep' }).click()
+  await expect(page.locator('[data-finding="1"]').getByRole('button', { name: 'Kept' })).toBeVisible()
+  await page.getByRole('button', { name: /^Finding 1:/ }).click()
+  await page.getByPlaceholder('What does the submitter need to fix? Quote the words if you can.').fill(
+    "The photo makes the loan look instant. Pick an image that doesn't suggest same-day cash.",
+  )
+  await page.getByRole('button', { name: 'Add finding' }).click()
+  await expect(page.getByText('FROM YOU')).toBeVisible()
+  await shoot(page, '05-review')
+  await page.goto('/review/5')
+  await expect(page.getByText('What changed')).toBeVisible()
+  await shoot(page, '06-what-changed')
+  await page.goto('/review/4')
+  await page.getByRole('button', { name: /^Finding 1:/ }).click()
+  await shoot(page, '07-other-formats-email')
+  await page.goto('/review/9')
+  await expect(page.getByText('What changed')).toBeVisible()
+  await shoot(page, '07-other-formats-landing-page')
+  await page.goto('/review/6')
+  await expect(page.getByText('No affiliate disclosure on this page')).toBeVisible()
+  await shoot(page, '07-other-formats-blog-post')
+  await page.goto('/history')
+  await expect(page.getByText('approved this week')).toBeVisible()
+  await shoot(page, '08-history')
+})
+
+test('09 rules, 10 add rule', async ({ page }) => {
+  await setRole(page, 'reviewer')
+  await page.goto('/rules')
+  await expect(page.getByText('Clear and conspicuous').first()).toBeVisible()
+  await shoot(page, '09-rules')
+  await page.getByRole('button', { name: 'Add a rule' }).click()
+  const drawer = page.getByRole('dialog')
+  await drawer.getByLabel('Rule name').fill('Balance transfer fees')
+  await drawer.getByLabel('What it checks').fill('A balance transfer offer must show the transfer fee next to the intro APR.')
+  await drawer.getByRole('checkbox', { name: 'Credit card' }).check()
+  await drawer.getByLabel('Don’t example').fill('0% intro APR for 18 months')
+  await drawer.getByLabel('Do example').fill('0% intro APR for 18 months. 3% transfer fee.')
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: 'screenshots/final/10-add-rule.png' })
+})

@@ -1,6 +1,6 @@
 import { Button, Checkbox, Input, InputNumber, Select, Table, type TableColumnsType, type TableProps } from 'antd'
 import type { FilterDropdownProps, SorterResult } from 'antd/es/table/interface'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AdThumbnail } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
@@ -258,6 +258,16 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
     if (data) onStats?.(data.stats)
   }, [data, onStats])
 
+  // antd draws the header filter buttons itself; give each one a name a screen reader can say.
+  const cardRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    cardRef.current?.querySelectorAll<HTMLElement>('th').forEach((th) => {
+      const trigger = th.querySelector<HTMLElement>('.ant-table-filter-trigger')
+      const title = th.querySelector('.ant-table-column-title')?.textContent?.trim()
+      if (trigger && title) trigger.setAttribute('aria-label', `Filter by ${title}`)
+    })
+  })
+
   const openDrawer = (id: number) =>
     setSearchParams((params) => {
       params.set('view', String(id))
@@ -397,7 +407,7 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
   else if (filtered) empty = 'No ads match your search.'
 
   return (
-    <section className="fp-table-card" aria-label={`${config.statusTitle === 'Decision' ? 'Approved ads' : 'Ads'}`}>
+    <section ref={cardRef} className="fp-table-card" aria-label={`${config.statusTitle === 'Decision' ? 'Approved ads' : 'Ads'}`}>
       <div className="fp-table-search">
         <Input
           aria-label="Search ads"
@@ -418,6 +428,8 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
         onChange={onChange}
         locale={{ emptyText: loading && !data ? ' ' : <div className="fp-table-empty">{empty}</div> }}
         tableLayout="fixed"
+        // Below ~1100px the columns keep their widths and the table scrolls inside its card.
+        scroll={{ x: 880 }}
       />
       {data && data.total > 0 && (
         <Footer

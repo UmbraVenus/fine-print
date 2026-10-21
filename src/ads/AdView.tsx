@@ -164,25 +164,16 @@ function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffse
 
   if (!edit) return <Tag style={style} data-layer={layer.id}>{body}</Tag>
 
+  // Click the words to edit them; keyboard users get a separate Edit button, so no control sits inside another.
   return (
     <Tag style={{ ...style, position: 'relative' }} data-layer={layer.id}>
-      <span
-        role="button"
-        tabIndex={0}
-        aria-label={`Edit ${layer.role}: ${layer.text}`}
-        className="fp-editable"
-        data-edited={edited || undefined}
-        onClick={() => setEditing(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            setEditing(true)
-          }
-        }}
-      >
+      <span className="fp-editable" data-edited={edited || undefined} onClick={() => setEditing(true)}>
         {body}
         {edited && <span className="fp-edited-badge">Edited</span>}
       </span>
+      <button type="button" className="fp-edit-layer" aria-label={`Edit ${layer.role}: ${layer.text}`} onClick={() => setEditing(true)}>
+        Edit
+      </button>
     </Tag>
   )
 }

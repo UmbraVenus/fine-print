@@ -268,14 +268,14 @@ GRADUATION_LAYERS = [
 ADS = [
     {
         "id": 1, "name": "Cash back card", "format": "Facebook ad", "product": "credit_card", "source": "internal",
-        "status": "draft", "is_mine": True, "created": (1, 15), "updated": (0, 9),
+        "status": "draft", "is_mine": True, "created": (1, 15), "updated": (0, 10),
         "versions": [{
             "theme": {"bg": "#1E2A4A", "fg": "#FFFFFF", "fine": "#C9D1E3",
                       "shapes": [{"shape": "rect", "right": 28, "bottom": 56, "w": 150, "h": 94, "radius": 10, "color": "#2BB3A3"},
                                  {"shape": "rect", "right": 136, "bottom": 116, "w": 26, "h": 20, "radius": 3, "color": "#F2C94C"}]},
             "layers": CASH_BACK_LAYERS,
             "submitted": None,
-            "check": (0, 9),
+            "check": (0, 10),
             "findings": [
                 F("trigger-terms", "headline", "No annual fee.",
                   "“No annual fee” is a trigger term, so the ad also needs the APR.",
@@ -285,11 +285,11 @@ ADS = [
                   "Say “2% cash back on purchases” instead."),
             ],
         }],
-        "events": [("check", (0, 9), "pre-check")],
+        "events": [("check", (0, 10), "pre-check")],
     },
     {
         "id": 2, "name": "Holiday debt email", "format": "Email", "product": "personal_loan", "source": "internal",
-        "status": "changes_required", "is_mine": True, "created": (2, 10), "updated": (0, 10),
+        "status": "changes_required", "is_mine": True, "created": (2, 10), "updated": (0, 11),
         "versions": [{
             "theme": {"accent": "#B84A3A"},
             "layers": HOLIDAY_LAYERS,
@@ -304,17 +304,17 @@ ADS = [
             ],
         }],
         "events": [("check", (1, 11), "pre-check"), ("submitted", (1, 11), 1), ("check", (1, 11), "submit"),
-                   ("decision", (0, 10), "changes_required", "Please add the full APR range and say autopay is optional, then resubmit.")],
+                   ("decision", (0, 11), "changes_required", "Please add the full APR range and say autopay is optional, then resubmit.")],
     },
     {
         "id": 3, "name": "Fall personal loan", "format": "Instagram ad", "product": "personal_loan", "source": "internal",
-        "status": "pending", "is_mine": True, "created": (1, 14), "updated": (0, 8), "due": 0,
+        "status": "pending", "is_mine": True, "created": (1, 14), "updated": (0, 9), "due": 0,
         "versions": [{
             "theme": {"bg": "#F4E7D7", "fg": "#2B1D14", "cta_bg": "#2B1D14", "cta_fg": "#FFFFFF",
                       "shapes": [{"shape": "circle", "right": 28, "bottom": 72, "w": 110, "h": 110, "color": "#E9A47E"}]},
             "layers": FALL_LAYERS,
-            "submitted": (0, 8),
-            "check": (0, 8),
+            "submitted": (0, 9),
+            "check": (0, 9),
             "findings": [
                 F("rate-claims", "headline", "as low as 7.99% APR",
                   "The rate claim is missing the full APR range and the autopay condition.",
@@ -328,7 +328,7 @@ ADS = [
                   "Checking your rate won't affect your credit score. Applying may.", fix_label="Suggested wording"),
             ],
         }],
-        "events": [("check", (0, 7), "pre-check"), ("submitted", (0, 8), 1), ("check", (0, 8), "submit")],
+        "events": [("check", (0, 8), "pre-check"), ("submitted", (0, 9), 1), ("check", (0, 9), "submit")],
     },
     {
         "id": 4, "name": "Rate check email", "format": "Email", "product": "personal_loan", "source": "internal",
@@ -348,7 +348,7 @@ ADS = [
     },
     {
         "id": 5, "name": "Dream home banner", "format": "Display banner", "product": "mortgage", "source": "internal",
-        "status": "pending", "is_mine": True, "created": (4, 9), "updated": (0, 9), "due": 1,
+        "status": "pending", "is_mine": True, "created": (4, 9), "updated": (0, 8), "due": 1,
         "versions": [
             {
                 "theme": {"bg": "#DCEBF7", "fg": "#15213B", "cta_bg": "#15213B", "cta_fg": "#FFFFFF", "art": "house", "art_color": "#3A6EA5"},
@@ -365,14 +365,14 @@ ADS = [
             {
                 "theme": {"bg": "#DCEBF7", "fg": "#15213B", "cta_bg": "#15213B", "cta_fg": "#FFFFFF", "art": "house", "art_color": "#3A6EA5"},
                 "layers": DREAM_V2,
-                "submitted": (0, 9),
-                "check": (0, 9),
+                "submitted": (0, 8),
+                "check": (0, 8),
                 "findings": [],
             },
         ],
         "events": [("submitted", (3, 10), 1), ("check", (3, 10), "submit"),
                    ("decision", (2, 14), "changes_required", "Add the NMLS ID and the Equal Housing logo, then resubmit."),
-                   ("resubmitted", (0, 9), 2), ("check", (0, 9), "submit")],
+                   ("resubmitted", (0, 8), 2), ("check", (0, 8), "submit")],
     },
     {
         "id": 6, "name": "Best loans of 2026", "format": "Blog post", "product": "personal_loan", "source": "TotallyLegitLoans.biz",
