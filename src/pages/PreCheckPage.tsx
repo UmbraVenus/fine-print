@@ -480,7 +480,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     try {
       const result = await api.post<{ due_date: string; version: number }>(`/api/ads/${ad.id}/submit`)
       refresh()
-      message.success(`Submitted${result.version > 1 ? ` as version ${result.version}` : ''}. Due ${dayPhrase(result.due_date, today)}.`)
+      message.success(`Sent for review${result.version > 1 ? ` as version ${result.version}` : ''}. You'll hear back by ${dayPhrase(result.due_date, today)}.`)
       navigate('/my-ads')
     } catch (e) {
       message.error(e instanceof ApiError ? e.message : "Couldn't submit. Try again.")

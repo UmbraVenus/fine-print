@@ -16,7 +16,8 @@ void unlock().then((ok) =>
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <ConfigProvider theme={theme}>
-        <AntApp>{ok ? <App /> : <NoAccess />}</AntApp>
+        {/* Toasts stay up long enough to read without rushing. */}
+        <AntApp message={{ duration: 6 }}>{ok ? <App /> : <NoAccess />}</AntApp>
       </ConfigProvider>
     </StrictMode>,
   ),

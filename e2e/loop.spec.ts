@@ -110,7 +110,7 @@ test('full loop: fix, resubmit, what changed, approve, history', async ({ page }
 
   // 2. The marketer submits version 2.
   await precheck.getByRole('button', { name: 'Submit' }).click()
-  await expect(precheck.getByText(/Submitted as version 2\. Due /)).toBeVisible()
+  await expect(precheck.getByText(/Sent for review as version 2\. You'll hear back by /)).toBeVisible()
   await expect(precheck).toHaveURL(/\/my-ads$/)
   const row = precheck.locator('tr', { hasText: 'Holiday debt email' })
   await expect(row.getByText('Pending')).toBeVisible()
