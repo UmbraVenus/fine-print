@@ -189,6 +189,18 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
                             secure=request.is_secure or request.headers.get("X-Forwarded-Proto") == "https")
         return response
 
+    @app.delete("/api/votes")
+    def unvote():
+        feature = body().get("feature")
+        voter = request.cookies.get(VOTER_COOKIE)
+        if feature not in COMING_NEXT:
+            return jsonify(error="Unknown feature"), 400
+        if voter:
+            db = get_db()
+            db.run("DELETE FROM feature_votes WHERE feature = ? AND voter = ?", (feature, voter))
+            db.commit()
+        return jsonify(vote_counts(voter))
+
     @app.get("/api/nav")
     def nav():
         db = get_db()

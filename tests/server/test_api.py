@@ -100,3 +100,7 @@ def test_votes_count_each_browser_once_and_survive_a_reset(tmp_path):
     assert one.post("/api/votes", json={"feature": "nope"}).status_code == 400
     one.post("/api/reset")
     assert one.get("/api/votes").get_json()["votes"]["upload"] == 2
+    # Undo takes back only your own vote.
+    undone = one.delete("/api/votes", json={"feature": "upload"}).get_json()
+    assert undone["votes"]["upload"] == 1 and undone["voted"] == []
+    assert two.get("/api/votes").get_json()["voted"] == ["upload"]

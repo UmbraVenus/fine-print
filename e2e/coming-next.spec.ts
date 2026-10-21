@@ -23,6 +23,11 @@ test('coming-next features take a vote, once per browser, where they would live 
   await page.getByRole('button', { name: /^Upload your own ads/ }).click()
   await expect(page.locator('.ant-popover').getByText('Thanks, noted')).toBeVisible()
   await expect(page.locator('.ant-popover').getByRole('button', { name: 'I’d use this' })).toHaveCount(0)
+  // Undo takes it back, and you can vote again.
+  await page.locator('.ant-popover').getByRole('button', { name: 'Undo' }).click()
+  await expect(page.locator('.ant-popover').getByRole('button', { name: 'I’d use this' })).toBeVisible()
+  await expect(page.locator('.ant-popover').getByText(/^\d+ votes?$/)).toHaveText(before === 1 ? '1 vote' : `${before} votes`)
+  await page.locator('.ant-popover').getByRole('button', { name: 'I’d use this' }).click()
   await page.keyboard.press('Escape')
 
   // The sidebar's roadmap opens the same card, and Rules and History have their own.

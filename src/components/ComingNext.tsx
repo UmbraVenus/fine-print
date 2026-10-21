@@ -99,6 +99,18 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
     }
   }
 
+  const unvote = async () => {
+    setSaving(true)
+    setFailed(false)
+    try {
+      setVotes(await api.del<VoteState>('/api/votes', { feature }))
+    } catch {
+      setFailed(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div style={{ width: 280, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, letterSpacing: '0.04em', color: '#4A5468' }}>COMING NEXT</span>
@@ -109,6 +121,10 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#067647' }}>
             <Icon name="check" size={14} strokeWidth={2.5} />
             Thanks, noted
+            <span aria-hidden="true" style={{ color: '#8A93A6' }}>·</span>
+            <button type="button" className="fp-quiet" style={{ font: 'inherit', fontWeight: 600, padding: '2px 4px', borderRadius: 4 }} onClick={unvote} disabled={saving}>
+              Undo
+            </button>
           </span>
         ) : (
           <button type="button" className="fp-copy-button" onClick={vote} disabled={saving}>
@@ -119,7 +135,7 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
       </div>
       {failed && (
         <span role="alert" style={{ fontSize: 13, color: '#B42318' }}>
-          Couldn't save your vote. Try again.
+          Couldn't save that. Try again.
         </span>
       )}
     </div>
