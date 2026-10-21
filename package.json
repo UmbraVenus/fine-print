@@ -9,8 +9,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:api": "python -m pytest -q tests/api",
+    "test": "vitest run && npm run test:api",
+    "test:api": "python -m pytest -q tests/server",
     "test:e2e": "playwright test",
     "smoke:anthropic": "python scripts/anthropic_smoke.py"
   },
