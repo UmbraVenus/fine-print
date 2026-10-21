@@ -62,10 +62,28 @@ test('history: computed numbers and pagination', async ({ page }) => {
   await page.goto('/history')
   await expect(page.locator('.fp-ad-link')).toHaveCount(10)
   await expect(page.getByText(/^Showing 1–10 of [\d,]+$/)).toBeVisible()
-  await expect(page.getByRole('spinbutton', { name: 'Go to page' })).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Go to page' })).toBeVisible()
   await page.screenshot({ path: 'screenshots/m3-history.png', fullPage: true })
   await page.getByRole('button', { name: 'Page 2', exact: true }).click()
   await expect(page.getByText(/^Showing 11–20 of/)).toBeVisible()
+})
+
+test('go to page: jumps on Enter and refuses a page that does not exist', async ({ page }) => {
+  await setRole(page, 'reviewer')
+  await page.goto('/history')
+  const goTo = page.getByRole('textbox', { name: 'Go to page' })
+  const lastPage = Number(await page.locator('nav[aria-label="Pages"] .fp-page').nth(-2).textContent())
+  // Typing past the last page used to stop at the last valid prefix ("300" became 30).
+  await goTo.fill(String(lastPage * 10))
+  await goTo.press('Enter')
+  await expect(page.getByRole('alert')).toHaveText(`Pick a page from 1 to ${lastPage}`)
+  await expect(goTo).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText(/^Showing 1–10 of/)).toBeVisible()
+  await goTo.fill('30')
+  await goTo.press('Enter')
+  await expect(page.getByText(/^Showing 291–300 of/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Page 30', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(goTo).toHaveValue('')
 })
 
 test('the view drawer opens from an ad name and closes with Escape', async ({ page }) => {

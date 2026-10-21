@@ -1,4 +1,4 @@
-import { Button, Checkbox, Input, InputNumber, Select, Table, type TableColumnsType, type TableProps } from 'antd'
+import { Button, Checkbox, Input, Select, Table, Tooltip, type TableColumnsType, type TableProps } from 'antd'
 import type { FilterDropdownProps, SorterResult } from 'antd/es/table/interface'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -156,7 +156,19 @@ function Footer({
   const pages = Math.max(1, Math.ceil(total / pageSize))
   const first = total === 0 ? 0 : (page - 1) * pageSize + 1
   const last = Math.min(total, page * pageSize)
-  const [goTo, setGoTo] = useState<number | null>(null)
+  // Kept as typed text and checked on Enter, so "300" never silently becomes the last valid prefix.
+  const [goTo, setGoTo] = useState('')
+  const [goToError, setGoToError] = useState(false)
+  const jump = () => {
+    const target = Number(goTo.trim())
+    if (!Number.isInteger(target) || target < 1 || target > pages) {
+      setGoToError(true)
+      return
+    }
+    setGoToError(false)
+    setGoTo('')
+    onPage(target)
+  }
   return (
     <div className="fp-table-footer">
       <span aria-live="polite">
@@ -202,20 +214,29 @@ function Footer({
         {pages > 5 && (
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             Go to
-            <InputNumber
-              aria-label="Go to page"
-              placeholder="Page"
-              min={1}
-              max={pages}
-              controls={false}
-              value={goTo}
-              onChange={(v) => setGoTo(typeof v === 'number' ? v : null)}
-              onPressEnter={() => {
-                if (goTo && goTo >= 1 && goTo <= pages) onPage(goTo)
-                setGoTo(null)
-              }}
-              style={{ width: 72 }}
-            />
+            <Tooltip open={goToError} title={`Pick a page from 1 to ${pages.toLocaleString('en-US')}`} placement="top">
+              <Input
+                aria-label="Go to page"
+                aria-invalid={goToError}
+                aria-describedby={goToError ? 'go-to-error' : undefined}
+                placeholder="Page"
+                inputMode="numeric"
+                status={goToError ? 'error' : undefined}
+                value={goTo}
+                onChange={(e) => {
+                  setGoTo(e.target.value.replace(/[^0-9]/g, ''))
+                  setGoToError(false)
+                }}
+                onPressEnter={jump}
+                onBlur={() => setGoToError(false)}
+                style={{ width: 72 }}
+              />
+            </Tooltip>
+            {goToError && (
+              <span id="go-to-error" className="fp-visually-hidden" role="alert">
+                Pick a page from 1 to {pages}
+              </span>
+            )}
           </label>
         )}
       </div>
