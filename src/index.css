@@ -180,7 +180,7 @@ a:hover {
 .fp-coming-next ul {
   list-style: none;
   margin: 0;
-  padding: 2px 12px 12px 36px;
+  padding: 2px 14px 12px 36px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1068,8 +1068,18 @@ a.fp-pager:hover {
   padding: 2px 0;
   text-align: left;
   cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.fp-coming-title {
   text-decoration: underline dotted;
   text-underline-offset: 3px;
+}
+.fp-coming-next li button > span[style] {
+  margin-top: 2px;
 }
 .fp-coming-next li button:hover {
   color: #ffffff;

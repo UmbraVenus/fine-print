@@ -1,7 +1,7 @@
 import { App as AntApp, Dropdown, Popconfirm, Tooltip } from 'antd'
 import { useState, type CSSProperties } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { COMING_NEXT, ComingNextPopover, VotedCheck } from '../components/ComingNext'
+import { COMING_NEXT, ComingNextPopover, VoteMark } from '../components/ComingNext'
 import { Icon, type IconName } from '../components/Icon'
 import { Logo } from '../components/Logo'
 import { api } from '../lib/api'
@@ -187,7 +187,8 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 <li key={item.id}>
                   <ComingNextPopover feature={item.id} placement="right">
                     <button type="button" aria-haspopup="dialog">
-                      {item.title} <VotedCheck feature={item.id} color="#B4F1DA" />
+                      <span className="fp-coming-title">{item.title}</span>
+                      <VoteMark feature={item.id} voted="#B4F1DA" open="#8A93A6" />
                     </button>
                   </ComingNextPopover>
                 </li>

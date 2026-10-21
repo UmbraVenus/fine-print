@@ -191,14 +191,15 @@ function PreCheckCard({
                 <button
                   type="button"
                   className="fp-swap"
+                  aria-label={size === 'done' ? 'Swapped' : `Swap in ${READABLE_SIZE}px`}
                   disabled={size === 'done'}
                   onClick={(e) => {
                     e.stopPropagation()
                     onMakeReadable()
                   }}
                 >
-                  <Icon name={size === 'done' ? 'check' : 'arrowUp'} size={14} strokeWidth={2.5} />
-                  {size === 'done' ? 'Readable' : 'Make it readable'}
+                  <Icon name={size === 'done' ? 'check' : 'swap'} size={14} strokeWidth={size === 'done' ? 2.5 : 2} />
+                  {size === 'done' ? 'Swapped' : 'Swap'}
                 </button>
               )
             }
@@ -390,7 +391,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     const layer = working.layers.find((l) => l.id === item.finding.layer_id)
     if (!layer) return
     await saveLayer(layer.id, layer.text, READABLE_SIZE)
-    message.success(`Made it ${READABLE_SIZE}px. Mark it resolved once it reads right.`)
+    message.success(`Swapped in ${READABLE_SIZE}px. Mark it resolved once it reads right.`)
   }
 
   const cardProps = (item: Numbered) => ({

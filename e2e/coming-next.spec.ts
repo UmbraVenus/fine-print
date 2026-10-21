@@ -6,6 +6,8 @@ test.use({ viewport: { width: 1280, height: 900 } })
 test('coming-next features take a vote, once per browser, where they would live and in the sidebar', async ({ page }) => {
   await setRole(page, 'marketer')
   await page.goto('/my-ads')
+  // Not voted yet: a question mark; after voting, a check.
+  await expect(page.getByRole('button', { name: /^Upload your own ads/ })).toContainText('not voted yet')
   await page.getByRole('button', { name: /^Upload your own ads/ }).click()
   const card = page.locator('.ant-popover')
   await expect(card.getByText('Drop in an image or a PDF.', { exact: false })).toBeVisible()

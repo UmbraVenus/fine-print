@@ -60,14 +60,14 @@ function useVotes(): VoteState | null {
   return state
 }
 
-/** A green check on an item you've voted for, so you can tell without opening it. */
-export function VotedCheck({ feature, color = '#067647' }: { feature: ComingFeature; color?: string }) {
+/** At the end of each coming-next item: a check once you've voted, a question mark until then. */
+export function VoteMark({ feature, voted: votedColor = '#067647', open: openColor = '#8A93A6' }: { feature: ComingFeature; voted?: string; open?: string }) {
   const votes = useVotes()
-  if (!votes?.voted.includes(feature)) return null
+  const voted = Boolean(votes?.voted.includes(feature))
   return (
-    <span data-voted={feature} style={{ display: 'inline-flex', color }}>
-      <Icon name="check" size={14} strokeWidth={2.6} />
-      <span className="fp-visually-hidden">, you voted for this</span>
+    <span data-voted={voted ? feature : undefined} style={{ display: 'inline-flex', flexShrink: 0, color: voted ? votedColor : openColor }}>
+      <Icon name={voted ? 'check' : 'question'} size={voted ? 14 : 15} strokeWidth={voted ? 2.6 : 2} />
+      <span className="fp-visually-hidden">{voted ? ', you voted for this' : ', not voted yet'}</span>
     </span>
   )
 }
@@ -149,8 +149,8 @@ export function ComingNextButton({ feature }: { feature: ComingFeature }) {
     <ComingNextPopover feature={feature}>
       <button type="button" className="fp-coming-door" aria-haspopup="dialog">
         {item.title}
-        <VotedCheck feature={feature} />
         <span className="fp-coming-tag">Coming next</span>
+        <VoteMark feature={feature} />
       </button>
     </ComingNextPopover>
   )

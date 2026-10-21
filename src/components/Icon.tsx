@@ -130,6 +130,12 @@ const STROKE: Record<string, ReactNode> = {
     </>
   ),
   check: <path d="M5 12l5 5 9-10" />,
+  question: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.4v.4M12 16.6v.4" />
+    </>
+  ),
   download: (
     <>
       <path d="M12 3v12" />
