@@ -361,9 +361,6 @@ def insights(db: Db, now: datetime) -> dict:
 
     metrics = []
     base, latest = approved[0], approved[-1]
-    hero = None
-    if base:
-        hero = {"line": f"{latest} approved this week, up from {base} before using Fine Print."}
     metrics.append({
         "key": "approved", "label": "More ads approved per week", "value": latest, "display": str(latest),
         "trend": _trend(_pct_change(latest, base), "up", "vs. before using Fine Print"),
@@ -375,9 +372,10 @@ def insights(db: Db, now: datetime) -> dict:
         saved = round(base_t - latest_t)
         metrics.append({
             "key": "turnaround", "label": "Time saved per ad", "value": latest_t,
-            "display": f"{saved}h faster" if saved > 0 else f"{latest_t}h",
+            "display": f"{saved}h" if saved > 0 else f"{latest_t}h",
             "trend": _trend(_pct_change(latest_t, base_t), "down", "vs. before using Fine Print"),
-            "note": f"From {_duration(base_t)} to {latest_t} hours, submit to approval",
+            "note": f"From {_duration(base_t)} to {latest_t} hours, submit to approval" if saved > 0
+            else f"Submit to approval, against {_duration(base_t)} before",
             "series": turnaround,
         })
     base_r, latest_r = rounds[0], rounds[-1]
@@ -420,4 +418,4 @@ def insights(db: Db, now: datetime) -> dict:
         status = "good" if score >= 85 else "watch" if score >= 60 else "at_risk"
         affiliates.append({"source": p["source"], "score": score, "ads": p["n"], "status": status})
     affiliates.sort(key=lambda a: (a["score"], a["source"]))
-    return {"hero": hero, "metrics": metrics, "issues": issues, "affiliates": affiliates}
+    return {"metrics": metrics, "issues": issues, "affiliates": affiliates}

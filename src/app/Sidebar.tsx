@@ -1,6 +1,7 @@
 import { App as AntApp, Dropdown, Popconfirm, Tooltip } from 'antd'
 import { useState, type CSSProperties } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { COMING_NEXT, ComingNextPopover } from '../components/ComingNext'
 import { Icon, type IconName } from '../components/Icon'
 import { Logo } from '../components/Logo'
 import { api } from '../lib/api'
@@ -8,7 +9,6 @@ import { ROLE_LABEL } from '../lib/labels'
 import type { Role } from '../lib/types'
 import { useWorkspace } from './workspace'
 
-const COMING_NEXT = ['Turn compliance documents into rules', 'Upload your own ads', 'Search past decisions']
 
 interface NavItem {
   to: string
@@ -184,7 +184,13 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           {comingOpen && (
             <ul id="coming-next-list">
               {COMING_NEXT.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item.id}>
+                  <ComingNextPopover feature={item.id} placement="right">
+                    <button type="button" aria-haspopup="dialog">
+                      {item.title}
+                    </button>
+                  </ComingNextPopover>
+                </li>
               ))}
             </ul>
           )}

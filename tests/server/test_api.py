@@ -84,3 +84,19 @@ def test_no_access_key_means_open(monkeypatch):
     client = create_app(":memory:").test_client()
     assert client.get("/api/nav").status_code == 200
     assert client.get("/api/access").status_code == 200
+
+
+def test_votes_count_each_browser_once_and_survive_a_reset(tmp_path):
+    app = create_app(f"file:{tmp_path / 'votes.db'}")
+    one, two = app.test_client(), app.test_client()
+    assert one.get("/api/votes").get_json() == {"votes": {"upload": 0, "doc-rules": 0, "search": 0}, "voted": []}
+    assert one.post("/api/votes", json={"feature": "upload"}).get_json()["votes"]["upload"] == 1
+    # The same browser again: still one vote.
+    again = one.post("/api/votes", json={"feature": "upload"}).get_json()
+    assert again["votes"]["upload"] == 1 and again["voted"] == ["upload"]
+    # Another browser counts.
+    assert two.post("/api/votes", json={"feature": "upload"}).get_json()["votes"]["upload"] == 2
+    assert two.get("/api/votes").get_json()["voted"] == ["upload"]
+    assert one.post("/api/votes", json={"feature": "nope"}).status_code == 400
+    one.post("/api/reset")
+    assert one.get("/api/votes").get_json()["votes"]["upload"] == 2

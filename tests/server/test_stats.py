@@ -73,10 +73,9 @@ def test_insights_tell_the_same_story_as_history(db):
     assert metrics["first_round"]["trend"] == history["first_review"]["trend"]
     base, latest = metrics["approved"]["series"][0], metrics["approved"]["series"][-1]
     assert metrics["approved"]["note"] == f"Up from {base} before using Fine Print"
-    assert insights["hero"]["line"] == f"{latest} approved this week, up from {base} before using Fine Print."
     # Time saved is the difference between before and now; efficiency is the ratio of rounds.
     t = metrics["turnaround"]["series"]
-    assert metrics["turnaround"]["display"] == f"{round(t[0] - t[-1])}h faster" and "working days" in metrics["turnaround"]["note"]
+    assert metrics["turnaround"]["display"] == f"{round(t[0] - t[-1])}h" and "working days" in metrics["turnaround"]["note"]
     r = metrics["rounds"]["series"]
     assert metrics["rounds"]["display"] == f"{round(r[0] / r[-1], 1)}×" and r[-1] < r[0]
     assert [m["label"] for m in insights["metrics"]] == [

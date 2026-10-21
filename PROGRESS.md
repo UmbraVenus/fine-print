@@ -49,6 +49,8 @@
 - Insights (Reviewer), from the owner's mock-up: ads approved per week, submit to approval, rounds per ad and approved in round 1, each against the week before Fine Print with a weekly sparkline; top issue types; affiliate compliance scores. All computed; the History filler now has several rounds per returned ad, the issue each round was sent back for, and four affiliate publishers. Check: `test_insights_tell_the_same_story_as_history`, `e2e/insights.spec.ts`.
 - Stat cards are clickable: on My ads and the Queue they filter the table to their rows (click again for all; the active card has a teal border); "you reviewed this week" opens History. The Queue's Auto check column also sorts, most serious first. Check: `e2e/stat-cards.spec.ts`, `test_stat_card_filters_match_their_numbers`.
 - Insights moved back under History (Queue is the Reviewer's home again), with a one-line summary and Open the Queue. Requesting changes on an internal ad puts it in My ads, so it can be Pre-checked and resubmitted. Add a rule removed (owner's call).
+- Coming next takes votes: each roadmap item (in the sidebar, and as a quiet dashed button where it would live: My ads, Rules, History) opens a card with what it would do, "I'd use this", and the count. One vote per feature per browser (an anonymous cookie, deduped in the database); Reset keeps votes. Check: `e2e/coming-next.spec.ts`, `test_votes_count_each_browser_once_and_survive_a_reset`.
+- Insights: Open the Queue sits on the title line; card titles are bigger.
 
 ## Ideas, not built
 

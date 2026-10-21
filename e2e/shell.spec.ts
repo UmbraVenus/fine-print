@@ -32,7 +32,7 @@ test('switching role sets the cookie, changes the nav and goes home', async ({ p
 
 test('coming next starts collapsed and lists the roadmap', async ({ page }) => {
   await page.goto('/queue')
-  const toggle = page.getByRole('button', { name: 'Coming next' })
+  const toggle = page.getByRole('button', { name: 'Coming next', exact: true })
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   await toggle.click()
   await expect(page.locator('#coming-next-list li')).toHaveText([

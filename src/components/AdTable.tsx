@@ -508,7 +508,7 @@ const STAT_ACTIONS: Record<TableView, Record<string, Partial<Filters>>> = {
   history: {},
 }
 
-export function TablePage({ title, view }: { title: string; view: TableView }) {
+export function TablePage({ title, view, action }: { title: string; view: TableView; action?: ReactNode }) {
   const [stats, setStats] = useState<Stat[] | null>(null)
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [page, setPage] = useState(1)
@@ -527,7 +527,10 @@ export function TablePage({ title, view }: { title: string; view: TableView }) {
 
   return (
     <>
-      <h1 className="fp-page-title">{title}</h1>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <h1 className="fp-page-title">{title}</h1>
+        {action}
+      </div>
       {stats ? <StatCards stats={stats} actions={actions} /> : <div style={{ height: 84 }} aria-hidden="true" />}
       <AdTable view={view} onStats={setStats} filters={filters} onFilters={applyFilters} page={page} onPage={setPage} />
     </>

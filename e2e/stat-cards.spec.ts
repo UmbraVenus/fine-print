@@ -39,7 +39,7 @@ test('Queue: due today filters; the other cards are plain numbers; the auto chec
   await due.click()
   await expect(rows).toHaveCount(4)
   await expect(page.locator('tbody td', { hasText: /^Today$/ })).toHaveCount(4)
-  await expect(due).toContainText('Showing only these')
+  await expect(due).toHaveAttribute('aria-pressed', 'true')
   await due.click()
   await expect(rows).toHaveCount(9)
 

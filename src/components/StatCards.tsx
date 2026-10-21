@@ -88,7 +88,6 @@ export function StatCards({ stats, actions = {} }: { stats: Stat[]; actions?: Re
                 {stat.trend && <TrendBadge trend={stat.trend} inert={Boolean(action)} />}
               </span>{' '}
               <span style={{ fontSize: 13, lineHeight: '16px', color: '#4A5468' }}>{stat.label}</span>
-              {active && <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 600, color: '#115E59' }}>Showing only these</span>}
               {action && (
                 // The card's name is what it shows, plus what the badge and a click mean.
                 <span className="fp-visually-hidden">
@@ -100,7 +99,7 @@ export function StatCards({ stats, actions = {} }: { stats: Stat[]; actions?: Re
             {action && (
               // The same funnel as the table's column filters: this card filters the table.
               <span aria-hidden="true" className="fp-stat-funnel" style={{ color: active ? '#0F766E' : '#8A93A6' }}>
-                <Icon name="filter" size={14} strokeWidth={2.2} />
+                <Icon name="filter" size={16} strokeWidth={2.2} />
               </span>
             )}
           </>

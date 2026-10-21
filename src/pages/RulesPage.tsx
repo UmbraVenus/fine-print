@@ -1,6 +1,7 @@
 import { Skeleton } from 'antd'
 import type { CSSProperties } from 'react'
 import { useWorkspace } from '../app/workspace'
+import { ComingNextButton } from '../components/ComingNext'
 import { FilledIcon, Icon } from '../components/Icon'
 import { Tag } from '../components/StatusTag'
 import type { Rule } from '../lib/detail'
@@ -124,6 +125,7 @@ export function RulesPage() {
             Every ad is checked against these {rules?.length ?? ''} rules. Each suggestion names the rule it comes from.
           </p>
         </div>
+        <ComingNextButton feature="doc-rules" />
       </div>
 
       {!rules && <Skeleton active paragraph={{ rows: 12 }} />}

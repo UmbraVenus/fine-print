@@ -18,6 +18,7 @@ test('Insights is the reviewer’s, and agrees with History', async ({ page }) =
   await expect(page.locator('[data-affiliate]').first()).toContainText('TotallyLegitLoans.biz')
   await expect(page.locator('[data-affiliate]').first()).toContainText('At risk')
   await page.screenshot({ path: 'screenshots/final/11-insights.png', fullPage: true })
+  await expect(page.getByRole('link', { name: /^Open the Queue · \d+$/ })).toBeVisible()
   await page.getByRole('link', { name: 'See all rules' }).click()
   await expect(page).toHaveURL(/\/rules$/)
 

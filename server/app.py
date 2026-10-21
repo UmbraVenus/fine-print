@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 import threading
 from typing import Any, Callable
 
@@ -157,6 +158,36 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     @app.get("/api/insights")
     def insights():
         return jsonify(repo.insights(get_db(), now()))
+
+    # Coming next: votes on features that aren't built yet, to decide what to build first.
+    # One vote per feature per browser: an anonymous voter id in a cookie, and a row per (feature, voter).
+    COMING_NEXT = ("upload", "doc-rules", "search")
+    VOTER_COOKIE = "fp_voter"
+
+    def vote_counts(voter: str | None) -> dict:
+        db = get_db()
+        counts = {r["feature"]: r["n"] for r in db.all("SELECT feature, COUNT(*) AS n FROM feature_votes GROUP BY feature")}
+        mine = {r["feature"] for r in db.all("SELECT feature FROM feature_votes WHERE voter = ?", (voter or "",))}
+        return {"votes": {f: counts.get(f, 0) for f in COMING_NEXT}, "voted": sorted(mine)}
+
+    @app.get("/api/votes")
+    def votes():
+        return jsonify(vote_counts(request.cookies.get(VOTER_COOKIE)))
+
+    @app.post("/api/votes")
+    def vote():
+        feature = body().get("feature")
+        if feature not in COMING_NEXT:
+            return jsonify(error="Unknown feature"), 400
+        voter = request.cookies.get(VOTER_COOKIE) or secrets.token_urlsafe(16)
+        db = get_db()
+        db.run("INSERT INTO feature_votes (feature, voter, created_at) VALUES (?, ?, ?) "
+               "ON CONFLICT(feature, voter) DO NOTHING", (feature, voter, iso(now())))
+        db.commit()
+        response = jsonify(vote_counts(voter))
+        response.set_cookie(VOTER_COOKIE, voter, max_age=365 * 24 * 3600, httponly=True, samesite="Lax",
+                            secure=request.is_secure or request.headers.get("X-Forwarded-Proto") == "https")
+        return response
 
     @app.get("/api/nav")
     def nav():

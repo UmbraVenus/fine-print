@@ -1028,3 +1028,49 @@ a.fp-pager:hover {
 .fp-stat-card:hover .fp-stat-funnel {
   color: var(--fp-primary) !important;
 }
+
+/* A feature that isn't built yet, where it would live: quiet, dashed, never teal. */
+.fp-coming-door {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 8px 0 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fp-ink-muted);
+  background: transparent;
+  border: 1px dashed #8a93a6;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fp-coming-door:hover {
+  color: var(--fp-ink);
+  border-color: var(--fp-ink-muted);
+  background: #ffffff;
+}
+.fp-coming-tag {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+  color: var(--fp-ink-muted);
+  background: #eef2f7;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.fp-coming-next li button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  padding: 2px 0;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.fp-coming-next li button:hover {
+  color: #ffffff;
+}
