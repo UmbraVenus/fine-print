@@ -141,9 +141,10 @@ def _layers(rng: random.Random, template: str, product: str, name: str) -> tuple
     cta = rng.choice(copy["cta"])
     if template in ("social-square", "social-portrait"):
         bg, fg, accent = rng.choice(PALETTES + DARK_PALETTES)
+        # The art sits in the bottom-right corner, beside the button and below the copy.
         shape = rng.choice([
-            {"shape": "circle", "right": 28, "bottom": 72, "w": 110, "h": 110, "color": accent},
-            {"shape": "rect", "right": 28, "bottom": 40, "w": 130, "h": 84, "radius": 10, "color": accent},
+            {"shape": "circle", "right": -36, "bottom": -36, "w": 132, "h": 132, "color": accent},
+            {"shape": "rect", "right": 28, "bottom": 28, "w": 96, "h": 60, "radius": 10, "color": accent},
         ])
         theme = {"bg": bg, "fg": fg, "cta_bg": fg, "cta_fg": bg, "shapes": [shape]}
         layers = [

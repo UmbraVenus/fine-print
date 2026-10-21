@@ -38,6 +38,9 @@
 - Fixed: a page that failed to load left a blank screen. Dependencies are pre-bundled at dev-server startup, and an error screen retries once, then offers Reload.
 - Pre-check: "Use this wording", "Edit on ad" and a manual "Mark resolved", which the reviewer sees. Download ad (PNG) for approved ads. See BLOCKED.md.
   - Checks: `e2e/loop.spec.ts` (use the wording, edit on ad, mark resolved and reopen, the reviewer sees it, PNG download at full size) and new server tests (resolve and reopen, drop-in wording, the resolved mark kept through a live Re-check).
+- Headlines shrink to fit around the art (down to 60%), measured on the real layout, so longer wording never runs into a shape. If shrinking isn't enough, the shape is hidden: words win over decoration. History filler art moved to the bottom-right corner; the circle over Fixed rate Instagram's copy is gone. Checked on 161 social ads: none needed to shrink or hide.
+- Suggested fixes are only the words to use, with a copy button in the box. "Use this wording" sits under the words when they're a drop-in swap; "Edit on ad" is on every card tied to a layer. The live check returns words only and forgives near-miss quotes (curly quotes, dashes, case).
+- "approved on first review" trend tooltip reads "vs. 45% last month", so "12 pts" (percentage points) explains itself.
 
 ## Ideas, not built
 

@@ -34,6 +34,9 @@ def test_history_stats(db):
     first = stats["first_review"]
     assert 40 <= first["value"] <= 70
     assert first["trend"]["unit"] == "pts"
+    # Points are the difference between this month's rate and the one the tooltip shows.
+    then = int(first["trend"]["compared_to"].removeprefix("vs. ").removesuffix("% last month"))
+    assert first["value"] - then == first["trend"]["value"]
 
 
 def test_history_total_matches_approved_ads(db):

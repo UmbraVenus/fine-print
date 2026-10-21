@@ -1,5 +1,5 @@
 import { Tooltip } from 'antd'
-import type { CSSProperties, ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react'
 import { FilledIcon, Icon } from '../components/Icon'
 import { SeverityTag } from '../components/StatusTag'
 import type { Finding, Rule } from '../lib/detail'
@@ -133,21 +133,62 @@ export function RuleLine({ rule }: { rule: Rule | null }) {
   )
 }
 
-export function FixBox({ label, text }: { label: string; text: string }) {
+/** Copy text, with a fallback for browsers that block the async clipboard. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    const area = document.createElement('textarea')
+    area.value = text
+    area.setAttribute('readonly', '')
+    area.style.position = 'fixed'
+    area.style.opacity = '0'
+    document.body.appendChild(area)
+    area.select()
+    const ok = document.execCommand('copy')
+    area.remove()
+    return ok
+  }
+}
+
+/** The words to use, a button that copies exactly them, and any action that puts them on the ad. */
+export function FixBox({ label, text, children }: { label: string; text: string; children?: ReactNode }) {
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const timer = window.setTimeout(() => setCopied(false), 2000)
+    return () => window.clearTimeout(timer)
+  }, [copied])
+  const copy = async (e: MouseEvent) => {
+    e.stopPropagation()
+    if (await copyText(text)) setCopied(true)
+  }
   return (
     <div
       style={{
         background: '#D5EEE8',
         borderLeft: '3px solid #0F766E',
         borderRadius: 6,
-        padding: '10px 12px 10px 13px',
+        padding: '10px 6px 10px 13px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
+        alignItems: 'flex-start',
+        gap: 8,
       }}
     >
-      <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#115E59' }}>{label}</span>
-      <span style={{ fontSize: 14, lineHeight: '22px', fontWeight: 500 }}>{text}</span>
+      <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#115E59' }}>{label}</span>
+        <span style={{ fontSize: 14, lineHeight: '22px', fontWeight: 500 }}>{text}</span>
+        {children && <div style={{ display: 'flex', marginTop: 8 }}>{children}</div>}
+      </div>
+      <Tooltip title={copied ? 'Copied' : 'Copy'}>
+        <button type="button" className="fp-fix-copy" aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`} onClick={copy}>
+          <Icon name={copied ? 'check' : 'copy'} size={16} strokeWidth={copied ? 2.5 : 2} />
+        </button>
+      </Tooltip>
+      <span className="fp-visually-hidden" aria-live="polite">
+        {copied ? 'Copied' : ''}
+      </span>
     </div>
   )
 }

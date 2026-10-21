@@ -225,7 +225,8 @@ def history_stats(db: Db, now: datetime) -> list[dict]:
         turnaround_trend = _trend(_pct_change(turnaround, turnaround_then), "down", "vs. 8 weeks ago")
     first_trend = None
     if first is not None and first_then is not None:
-        first_trend = _trend(first - first_then, "up", "vs. last month", unit="pts")
+        # Percentage points: the difference between the two rates, with last month's rate to read it against.
+        first_trend = _trend(first - first_then, "up", f"vs. {first_then}% last month", unit="pts")
 
     return [
         {"key": "approved", "value": approved, "label": "approved this week", "tone": "success", "icon": "check",

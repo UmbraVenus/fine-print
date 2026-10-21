@@ -91,7 +91,7 @@ export function ReviewSuggestionCard({
           </div>
         )}
         {finding.submitter_note && <NoteBox label="Note from submitter" text={finding.submitter_note} />}
-        {finding.suggested_fix && <FixBox label={finding.fix_label ?? 'Suggested fix'} text={finding.suggested_fix} />}
+        {finding.suggested_fix && <FixBox label={finding.fix_label ?? 'Suggested wording'} text={finding.suggested_fix} />}
         {!readOnly && (
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
             <button

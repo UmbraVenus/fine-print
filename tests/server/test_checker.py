@@ -53,11 +53,11 @@ def test_quote_must_be_a_substring_of_its_layer(db):
     reply = {
         "findings": [
             {"rule_id": "guarantees", "layer_id": "headline", "quote": "GUARANTEED approval!!!",
-             "text": "Promises guaranteed approval.", "fix_label": "Suggested wording", "suggested_fix": "See if you qualify."},
+             "text": "Promises guaranteed approval.", "suggested_fix": "See if you qualify."},
             {"rule_id": "rate-claims", "layer_id": "body", "quote": "words that are not there",
-             "text": "The rate isn't real.", "fix_label": "Suggested fix", "suggested_fix": "Show the real APR range."},
+             "text": "The rate isn't real.", "suggested_fix": "Show the real APR range."},
             {"rule_id": "trigger-terms", "layer_id": "body", "quote": None,
-             "text": "Not an applicable rule.", "fix_label": "Suggested fix", "suggested_fix": "x"},
+             "text": "Not an applicable rule.", "suggested_fix": "x"},
         ],
         "passed_rule_ids": [],
     }
@@ -77,7 +77,7 @@ def test_notes_carry_over_when_a_finding_is_still_there(db):
     vid = version_id(db, 3)
     rate = next(f for f in repo.ad_detail(db, 3)["current"]["findings"] if f["rule_id"] == "rate-claims")
     reply = {"findings": [{"rule_id": "rate-claims", "layer_id": "headline", "quote": "as low as 7.99% APR",
-                           "text": "Rate claim needs the range.", "fix_label": "Suggested fix", "suggested_fix": "Add it."}],
+                           "text": "Rate claim needs the range.", "suggested_fix": "Add it."}],
              "passed_rule_ids": []}
     checker.run_check(db, vid, NOW, client=FakeClient(reply=reply))
     after = repo.ad_detail(db, 3)["current"]["findings"]
@@ -134,20 +134,40 @@ def test_add_rule_validates_and_applies_to_live_checks(db):
     # Seeded results stay as they were.
     assert all("custom-balance-transfer-fees" not in (repo.ad_detail(db, 8)["current"]["check"]["good_rule_ids"]) for _ in [0])
     client = FakeClient(reply={"findings": [{"rule_id": "custom-balance-transfer-fees", "layer_id": "headline",
-                                             "quote": "No annual fee.", "text": "Missing fee.", "fix_label": "Suggested fix",
-                                             "suggested_fix": "Add the fee."}], "passed_rule_ids": []})
+                                             "quote": "No annual fee.", "text": "Missing fee.", "suggested_fix": "Add the fee."}], "passed_rule_ids": []})
     checker.run_check(db, version_id(db, 8), NOW, client=client)
     flagged = [f for f in repo.ad_detail(db, 8)["current"]["findings"] if f["rule_id"] == "custom-balance-transfer-fees"]
     assert flagged and flagged[0]["severity"] == "critical"
 
 
-def test_wording_without_a_valid_quote_becomes_advice(db):
-    reply = {"findings": [{"rule_id": "guarantees", "layer_id": "headline", "quote": "not on the ad",
-                           "text": "Promises guaranteed approval.", "fix_label": "Suggested wording",
-                           "suggested_fix": "See if you qualify in minutes."}], "passed_rule_ids": []}
-    checker.run_check(db, version_id(db, 6), NOW, client=FakeClient(reply=reply))
-    finding = repo.ad_detail(db, 6)["current"]["findings"][0]
-    assert finding["quote"] is None and finding["fix_label"] == "Suggested fix"
+def test_near_miss_quotes_still_anchor_to_the_ad():
+    text = "Rates from 7.99%–29.99% APR. It\u2019s “simple.”"
+    assert checker.locate_quote("7.99%-29.99% apr", text) == "7.99%–29.99% APR"
+    assert checker.locate_quote("It's \"simple.\"", text) == "It\u2019s “simple.”"
+    assert checker.locate_quote("  Rates from ", text) == "Rates from"
+    assert checker.locate_quote("not on the ad", text) is None
+    assert checker.locate_quote("   ", text) is None
+
+
+def test_fixes_are_only_the_words(db):
+    reply = {"findings": [
+        {"rule_id": "guarantees", "layer_id": "headline", "quote": "guaranteed approval!!!",
+         "text": "Promises guaranteed approval.", "suggested_fix": "See if you qualify in minutes."},
+        {"rule_id": "clear-and-conspicuous", "layer_id": "body", "quote": None,
+         "text": "The disclosure is too small to read.", "suggested_fix": "  "},
+    ], "passed_rule_ids": []}
+    client = FakeClient(reply=reply)
+    checker.run_check(db, version_id(db, 6), NOW, client=client)
+    findings = {f["rule_id"]: f for f in repo.ad_detail(db, 6)["current"]["findings"]}
+    # A near miss in case still anchors to the exact words, so the wording can be swapped in.
+    assert findings["guarantees"]["quote"] == "GUARANTEED approval!!!"
+    assert findings["guarantees"]["fix_label"] == "Suggested wording"
+    # Nothing to say in words: no fix at all, the text says what's wrong.
+    assert findings["clear-and-conspicuous"]["suggested_fix"] is None
+    assert findings["clear-and-conspicuous"]["fix_label"] is None
+    item = client.messages.requests[0]["output_config"]["format"]["schema"]["properties"]["findings"]["items"]
+    assert "fix_label" not in item["properties"] and "suggested_fix" in item["required"]
+    assert "never an instruction" in client.messages.requests[0]["system"]
 
 
 def test_resolved_mark_survives_a_live_recheck(db):
@@ -157,7 +177,6 @@ def test_resolved_mark_survives_a_live_recheck(db):
     trigger = next(f for f in repo.ad_detail(db, 1)["current"]["findings"] if f["rule_id"] == "trigger-terms")
     actions.update_finding(db, trigger["id"], "resolve")
     reply = {"findings": [{"rule_id": "trigger-terms", "layer_id": "headline", "quote": "No annual fee.",
-                           "text": "Needs the APR.", "fix_label": "Suggested wording",
-                           "suggested_fix": "No annual fee. 21.24%–29.24% variable APR."}], "passed_rule_ids": []}
+                           "text": "Needs the APR.", "suggested_fix": "No annual fee. 21.24%–29.24% variable APR."}], "passed_rule_ids": []}
     checker.run_check(db, vid, NOW, client=FakeClient(reply=reply))
     assert repo.ad_detail(db, 1)["current"]["findings"][0]["resolved_by_submitter"] is True

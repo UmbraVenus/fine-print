@@ -45,7 +45,91 @@ interface LayerProps {
   as?: 'div' | 'span' | 'p'
   underlineOffset?: number
   prefix?: ReactNode
+  /** Shrink the text (down to 60% of its size) until this says it fits, so longer copy never runs into the art. */
+  fits?: (el: HTMLElement) => boolean
 }
+
+const SOCIAL_PADDING = 28
+const ART_GAP = 8
+
+function overlaps(a: DOMRect, b: DOMRect): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+}
+
+/** What a layer covers: its words, or its whole box when it has a fill, like a button. Pins and the Edited badge don't count. */
+function inkRects(node: Element): DOMRect[] {
+  if (getComputedStyle(node).backgroundColor !== 'rgba(0, 0, 0, 0)') return [node.getBoundingClientRect()]
+  const rects: DOMRect[] = []
+  const range = document.createRange()
+  const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
+  for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+    if (t.parentElement?.closest('[data-pin], .fp-edited-badge, .fp-edit-layer')) continue
+    range.selectNodeContents(t)
+    rects.push(...[...range.getClientRects()].filter((r) => r.width > 0))
+  }
+  return rects
+}
+
+/** The art a shape takes up, with a little air around it. */
+function artRect(shape: Element, scale: number): DOMRect {
+  const r = shape.getBoundingClientRect()
+  const gap = ART_GAP * scale
+  return new DOMRect(r.x - gap, r.y - gap, r.width + 2 * gap, r.height + 2 * gap)
+}
+
+/** The shapes some words run into. */
+function crowdedArt(canvas: HTMLElement, shapes: HTMLElement[], scale: number): HTMLElement[] {
+  const ink = [...canvas.querySelectorAll('[data-layer]')].flatMap(inkRects)
+  return shapes.filter((shape) => {
+    const art = artRect(shape, scale)
+    return ink.some((r) => overlaps(r, art))
+  })
+}
+
+/** Every word sits inside the canvas padding and clear of these shapes. */
+function copyFits(canvas: HTMLElement, shapes: HTMLElement[], scale: number): boolean {
+  const floor = canvas.getBoundingClientRect().bottom - SOCIAL_PADDING * scale + 1
+  const ink = [...canvas.querySelectorAll('[data-layer]')].flatMap(inkRects)
+  return ink.every((r) => r.bottom <= floor) && crowdedArt(canvas, shapes, scale).length === 0
+}
+
+/**
+ * Fit the copy around the art. The headline shrinks (down to 60% of its size) until every word is clear
+ * of the shapes and inside the padding. If that still isn't enough, the shapes in the way are hidden and
+ * the headline grows back as far as it can: the words always win over decoration.
+ */
+function fitSocialCopy(canvas: HTMLElement, headlineId: string | undefined, base: number) {
+  const box = canvas.getBoundingClientRect()
+  if (!box.height) return
+  // Thumbnails are scaled with a transform; offsetHeight is the unscaled size.
+  const scale = box.height / canvas.offsetHeight
+  const shapes = [...canvas.querySelectorAll<HTMLElement>('[data-art]')]
+  shapes.forEach((shape) => (shape.style.visibility = ''))
+  const headline = headlineId ? canvas.querySelector<HTMLElement>(`[data-layer="${headlineId}"]`) : null
+  const setSize = (size: number) => {
+    if (headline) headline.style.fontSize = `${size}px`
+  }
+  const min = Math.round(base * 0.6)
+  let size = base
+  setSize(size)
+  while (headline && size > min && !copyFits(canvas, shapes, scale)) setSize(--size)
+  if (copyFits(canvas, shapes, scale)) return
+
+  const crowded = crowdedArt(canvas, shapes, scale)
+  crowded.forEach((shape) => (shape.style.visibility = 'hidden'))
+  const kept = shapes.filter((shape) => !crowded.includes(shape))
+  while (size < base) {
+    setSize(size + 1)
+    if (!copyFits(canvas, kept, scale)) {
+      setSize(size)
+      break
+    }
+    size += 1
+  }
+}
+
+/** A banner headline gets two lines beside the art. */
+const bannerHeadlineFits = (el: HTMLElement) => el.scrollHeight <= 52
 
 function AutoTextarea({ value, onCommit, onCancel, style }: { value: string; onCommit: (text: string) => void; onCancel: () => void; style: CSSProperties }) {
   const [text, setText] = useState(value)
@@ -103,8 +187,34 @@ function AutoTextarea({ value, onCommit, onCancel, style }: { value: string; onC
   )
 }
 
-function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffset, prefix }: LayerProps) {
+function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffset, prefix, fits }: LayerProps) {
   const editing = Boolean(edit && layer && edit.editingId === layer.id)
+  const textRef = useRef<HTMLElement>(null)
+  const base = typeof style?.fontSize === 'number' ? style.fontSize : undefined
+  const text = layer?.text
+
+  // Measure the real layout and step the size down 1px at a time, so every view of the ad agrees.
+  useLayoutEffect(() => {
+    const el = textRef.current
+    if (!el || !fits || !base || editing) return
+    const shrink = () => {
+      let size = base
+      const min = Math.round(base * 0.6)
+      el.style.fontSize = `${size}px`
+      while (!fits(el) && size > min) {
+        size -= 1
+        el.style.fontSize = `${size}px`
+      }
+    }
+    shrink()
+    let cancelled = false
+    // Measure again once the web font has loaded; the fallback font has different widths.
+    document.fonts?.ready.then(() => !cancelled && shrink())
+    return () => {
+      cancelled = true
+    }
+  }, [text, fits, base, editing])
+
   if (!layer) return null
   const Tag = as
   const mine = state.markers.filter((m) => m.layerId === layer.id)
@@ -165,11 +275,11 @@ function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffse
     </>
   )
 
-  if (!edit) return <Tag style={style} data-layer={layer.id}>{body}</Tag>
+  if (!edit) return <Tag ref={textRef as never} style={style} data-layer={layer.id}>{body}</Tag>
 
   // Click the words to edit them; keyboard users get a separate Edit button, so no control sits inside another.
   return (
-    <Tag style={{ ...style, position: 'relative' }} data-layer={layer.id}>
+    <Tag ref={textRef as never} style={{ ...style, position: 'relative' }} data-layer={layer.id}>
       <span className="fp-editable" data-edited={edited || undefined} onClick={() => edit.setEditing(layer.id)}>
         {body}
         {edited && <span className="fp-edited-badge">Edited</span>}
@@ -200,8 +310,29 @@ function SocialAd({ content, state, edit, portrait }: { content: AdContent; stat
   const layer = (l: Layer | undefined, style: CSSProperties) => (
     <LayerText key={l?.id} layer={l} state={state} edit={edit} kind="outline" style={{ position: 'relative', ...style }} />
   )
+
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const copy = layers.map((l) => l.text).join('\n')
+  const headlineSize = headline?.style?.fontSize ?? 32
+  const editingId = edit?.editingId
+  const edited = edit ? [...edit.editedIds].join() : ''
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const fit = () => fitSocialCopy(canvas, editingId === headline?.id ? undefined : headline?.id, headlineSize)
+    fit()
+    let cancelled = false
+    // Measure again once the web font has loaded; the fallback font has different widths.
+    document.fonts?.ready.then(() => !cancelled && fit())
+    return () => {
+      cancelled = true
+    }
+  }, [copy, headline?.id, headlineSize, editingId, edited])
+
   return (
     <div
+      ref={canvasRef}
+      data-canvas
       style={{
         position: 'relative',
         width: 360,
@@ -210,7 +341,7 @@ function SocialAd({ content, state, edit, portrait }: { content: AdContent; stat
         borderRadius: 12,
         boxShadow: '0 1px 2px #15213B14',
         boxSizing: 'border-box',
-        padding: 28,
+        padding: SOCIAL_PADDING,
         display: 'flex',
         flexDirection: 'column',
         alignItems: center ? 'center' : 'stretch',
@@ -225,6 +356,7 @@ function SocialAd({ content, state, edit, portrait }: { content: AdContent; stat
         <span
           key={i}
           aria-hidden="true"
+          data-art
           style={{
             position: 'absolute',
             right: s.right,
@@ -238,11 +370,14 @@ function SocialAd({ content, state, edit, portrait }: { content: AdContent; stat
       ))}
       {avatar && <span aria-hidden="true" style={{ width: 96, height: 96, borderRadius: 9999, background: avatar, flexShrink: 0 }} />}
       {layer(eyebrow, { fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', lineHeight: 1.3 })}
-      {layer(headline, {
-        fontSize: headline?.style?.fontSize ?? 32,
-        lineHeight: 1.12,
-        fontWeight: headline?.style?.weight ?? 800,
-      })}
+      {layer(
+        headline,
+        {
+          fontSize: headlineSize,
+          lineHeight: 1.12,
+          fontWeight: headline?.style?.weight ?? 800,
+        },
+      )}
       {bodies.map((b) =>
         layer(b, { fontSize: b.style?.fontSize ?? 15, lineHeight: 1.35, fontWeight: b.style?.weight ?? 400 }),
       )}
@@ -304,7 +439,7 @@ function BannerAd({ content, state, edit }: { content: AdContent; state: MarkerS
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LayerText layer={eyebrow} state={state} edit={edit} kind="outline" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em' }} />
-          <LayerText layer={headline} state={state} edit={edit} kind="outline" style={{ fontSize: 22, lineHeight: 1.15, fontWeight: 800 }} />
+          <LayerText layer={headline} state={state} edit={edit} kind="outline" style={{ fontSize: 22, lineHeight: 1.15, fontWeight: 800 }} fits={bannerHeadlineFits} />
           {cta && (
             <div style={{ alignSelf: 'flex-start' }}>
               <LayerText

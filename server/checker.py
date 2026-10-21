@@ -36,11 +36,10 @@ For every rule the copy breaks, return one finding:
 can be quoted (for example, a missing disclosure).
 - text: one plain sentence a marketer understands: what's wrong on this ad. Don't cite regulations or \
 section numbers, and don't blame anyone.
-- fix_label and suggested_fix: whenever the problem can be fixed by changing the words, use \
-"Suggested wording", and make suggested_fix a drop-in replacement for quote: the exact words that would \
-stand in its place, so the layer still reads as one correct sentence once they're swapped in. Prefer this. \
-Use "Suggested fix" only when the fix isn't a word swap (size, placement, or something missing from the \
-ad), and then write one concrete instruction.
+- suggested_fix: only the words to use, never an instruction about them; text already says what's wrong. \
+With a quote, write a drop-in replacement for it: the exact words that would stand in its place, so the \
+layer still reads as one correct sentence once they're swapped in. When something is missing, write the \
+exact words to add. When the fix isn't about words (size or placement), leave it empty.
 
 List every rule the copy does not break in passed_rule_ids. Each applicable rule appears exactly once: \
 either in a finding or in passed_rule_ids. Flag only real problems; a rule with nothing to flag passes.
@@ -78,10 +77,9 @@ def output_schema(rule_ids: list[str], layer_ids: list[str]) -> dict:
                         "layer_id": nullable_layer,
                         "quote": {"anyOf": [{"type": "string"}, {"type": "null"}]},
                         "text": {"type": "string"},
-                        "fix_label": {"type": "string", "enum": ["Suggested fix", "Suggested wording"]},
                         "suggested_fix": {"type": "string"},
                     },
-                    "required": ["rule_id", "layer_id", "quote", "text", "fix_label", "suggested_fix"],
+                    "required": ["rule_id", "layer_id", "quote", "text", "suggested_fix"],
                     "additionalProperties": False,
                 },
             },
@@ -160,10 +158,32 @@ class CheckFailed(Exception):
     pass
 
 
+# Characters a model often swaps for their look-alikes when it copies a quote.
+_LOOK_ALIKES = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+                              "\u2013": "-", "\u2014": "-", "\u00a0": " "})
+
+
+def locate_quote(quote: str, text: str) -> str | None:
+    """
+    The exact words on the layer that a quote points at, forgiving curly quotes, dashes and case,
+    so a near miss still anchors to the ad. None when the words aren't there.
+    """
+    quote = quote.strip()
+    if not quote:
+        return None
+    if quote in text:
+        return quote
+    loose_text, loose_quote = text.translate(_LOOK_ALIKES).lower(), quote.translate(_LOOK_ALIKES).lower()
+    if len(loose_text) != len(text) or len(loose_quote) != len(quote):
+        return None
+    start = loose_text.find(loose_quote)
+    return text[start:start + len(quote)] if start >= 0 else None
+
+
 def validate(data: dict, rules: list[dict], layers: list[dict]) -> tuple[list[dict], list[str]]:
     """
-    Keep findings for applicable rules only. A layer must exist, and a quote must be an exact substring
-    of its layer; otherwise the quote is dropped and the finding kept. Severity comes from the rule.
+    Keep findings for applicable rules only. A layer must exist, and a quote must be in its layer
+    (see locate_quote); otherwise the quote is dropped and the finding kept. Severity comes from the rule.
     """
     by_rule = {r["id"]: r for r in rules}
     texts = {l["id"]: l["text"] for l in layers}
@@ -178,20 +198,17 @@ def validate(data: dict, rules: list[dict], layers: list[dict]) -> tuple[list[di
             continue
         layer_id = raw.get("layer_id") if raw.get("layer_id") in texts else None
         quote = raw.get("quote") if isinstance(raw.get("quote"), str) else None
-        if quote is not None and (layer_id is None or not quote.strip() or quote not in texts[layer_id]):
-            quote = None
+        if quote is not None:
+            quote = locate_quote(quote, texts[layer_id]) if layer_id else None
         key = (rule["id"], layer_id, quote)
         if key in seen:
             continue
         seen.add(key)
         fix = str(raw.get("suggested_fix") or "").strip() or None
-        label = raw.get("fix_label") if raw.get("fix_label") in ("Suggested fix", "Suggested wording") else "Suggested fix"
-        if label == "Suggested wording" and quote is None:
-            # Replacement words need words to replace; without a valid quote it's advice, not wording.
-            label = "Suggested fix"
         findings.append({
             "rule_id": rule["id"], "severity": rule["severity"], "layer_id": layer_id, "quote": quote,
-            "text": text[:500], "suggested_fix": fix[:500] if fix else None, "fix_label": label if fix else None,
+            "text": text[:500], "suggested_fix": fix[:500] if fix else None,
+            "fix_label": "Suggested wording" if fix else None,
         })
     flagged = {f["rule_id"] for f in findings}
     passed = [r["id"] for r in rules if r["id"] not in flagged]

@@ -763,6 +763,24 @@ a.fp-pager:hover {
 .fp-copy-button:hover {
   background: var(--fp-primary-soft);
 }
+.fp-fix-copy {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  margin-top: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #115e59;
+  cursor: pointer;
+  padding: 0;
+}
+.fp-fix-copy:hover {
+  background: #ffffff;
+}
 .fp-small-button {
   font: inherit;
   font-size: 13px;

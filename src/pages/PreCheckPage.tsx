@@ -135,12 +135,19 @@ function PreCheckCard({
           <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600, color: resolved ? '#4A5468' : undefined }}>{finding.text}</p>
           <RuleLine rule={rule} />
         </div>
-        {finding.suggested_fix && !resolved && <FixBox label={finding.fix_label ?? 'Suggested fix'} text={finding.suggested_fix} />}
-        {editable && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
-            {!resolved && wording !== 'none' && (
+        {finding.suggested_fix && !resolved && (
+          <FixBox label={finding.fix_label ?? 'Suggested wording'} text={finding.suggested_fix}>
+            {editable && wording !== 'none' && (
               <Tooltip title={wording === 'changed' ? 'The flagged words have changed on the ad. Edit it there instead.' : undefined}>
-                <button type="button" className="fp-copy-button" disabled={wording !== 'ready'} onClick={onUseWording}>
+                <button
+                  type="button"
+                  className="fp-copy-button"
+                  disabled={wording !== 'ready'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onUseWording()
+                  }}
+                >
                   {wording === 'used' ? (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       <Icon name="check" size={14} strokeWidth={2.5} />
@@ -152,7 +159,11 @@ function PreCheckCard({
                 </button>
               </Tooltip>
             )}
-            {!resolved && wording !== 'ready' && finding.layer_id && layerText !== undefined && (
+          </FixBox>
+        )}
+        {editable && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+            {!resolved && finding.layer_id && layerText !== undefined && (
               <button type="button" className="fp-secondary fp-small-button" onClick={onEditOnAd}>
                 Edit on ad
               </button>

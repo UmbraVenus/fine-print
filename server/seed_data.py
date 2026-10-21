@@ -136,9 +136,13 @@ def L(layer_id: str, role: str, text: str, **style) -> dict:
 
 
 def F(rule_id: str | None, layer_id: str | None, quote: str | None, text: str, fix: str | None = None,
-      fix_label: str = "Suggested fix", **extra) -> dict:
+      **extra) -> dict:
+    """
+    An auto finding. The fix is only the words to use: a drop-in replacement for the quote, or the words
+    to add when something is missing. No fix when it isn't about words; the text already says what's wrong.
+    """
     return {"rule_id": rule_id, "layer_id": layer_id, "quote": quote, "text": text,
-            "suggested_fix": fix, "fix_label": fix_label if fix else None, **extra}
+            "suggested_fix": fix, "fix_label": "Suggested wording" if fix else None, **extra}
 
 
 def R(text: str, **extra) -> dict:
@@ -279,10 +283,10 @@ ADS = [
             "findings": [
                 F("trigger-terms", "headline", "No annual fee.",
                   "“No annual fee” is a trigger term, so the ad also needs the APR.",
-                  "No annual fee. 21.24%–29.24% variable APR.", fix_label="Suggested wording"),
+                  "No annual fee. 21.24%–29.24% variable APR."),
                 F("clear-and-conspicuous", "body", "2% cash back on everything.",
                   "“On everything” has exclusions that only appear in the fine print.",
-                  "2% cash back on purchases.", fix_label="Suggested wording"),
+                  "2% cash back on purchases."),
             ],
         }],
         "events": [("check", (0, 10), "pre-check")],
@@ -298,8 +302,7 @@ ADS = [
             "findings": [
                 F("rate-claims", "body", "Rates as low as 8.99% APR with autopay.",
                   "The rate claim is missing the full APR range and the autopay condition.",
-                  "Fixed rates from 8.99% to 29.99% APR with autopay. Autopay is optional.",
-                  fix_label="Suggested wording", state="kept", sent=True),
+                  "Fixed rates from 8.99% to 29.99% APR with autopay. Autopay is optional.", state="kept", sent=True),
                 R("Add the APR range and say autopay is optional.", sent=True),
             ],
         }],
@@ -318,14 +321,13 @@ ADS = [
             "findings": [
                 F("rate-claims", "headline", "as low as 7.99% APR",
                   "The rate claim is missing the full APR range and the autopay condition.",
-                  "from 7.99% to 29.99% APR with autopay", fix_label="Suggested wording",
+                  "from 7.99% to 29.99% APR with autopay",
                   submitter_note="Legal approved this rate wording last month."),
                 F("clear-and-conspicuous", "disclosure", "Rates from 7.99% APR with autopay. Terms apply.",
-                  "The disclosure is too small to read and far from the claim.",
-                  "Put the disclosure right under the rate, at a readable size."),
+                  "The disclosure is too small to read and far from the claim."),
                 F("credit-score-claims", "body", "Checking your rate won't affect your credit score.",
                   "“Won't affect your credit score” is only true for checking your rate.",
-                  "Checking your rate won't affect your credit score. Applying may.", fix_label="Suggested wording"),
+                  "Checking your rate won't affect your credit score. Applying may."),
             ],
         }],
         "events": [("check", (0, 8), "pre-check"), ("submitted", (0, 9), 1), ("check", (0, 9), "submit")],
@@ -341,7 +343,7 @@ ADS = [
             "findings": [
                 F("credit-score-claims", "subject", "with no impact to your credit score!",
                   "“No impact to your credit score” is only true for checking your rate.",
-                  "with no impact to your credit score. Applying may affect it.", fix_label="Suggested wording"),
+                  "with no impact to your credit score. Applying may affect it."),
             ],
         }],
         "events": [("submitted", (2, 10), 1), ("check", (2, 10), "submit")],
@@ -357,9 +359,9 @@ ADS = [
                 "check": (3, 10),
                 "findings": [
                     F("mortgage-identifiers", None, None, "No NMLS ID on the banner.",
-                      "Add “ClearPath Home Loans · NMLS ID 123456” under the banner.", state="kept", sent=True),
+                      "ClearPath Home Loans · NMLS ID 123456", state="kept", sent=True),
                     F("mortgage-identifiers", None, None, "No Equal Housing logo.",
-                      "Add the Equal Housing Lender logo next to the NMLS ID.", state="kept", sent=True),
+                      "Equal Housing Lender", state="kept", sent=True),
                 ],
             },
             {
@@ -384,11 +386,11 @@ ADS = [
             "check": (0, 7),
             "findings": [
                 F("guarantees", "headline", "GUARANTEED approval!!!", "Promises guaranteed approval.",
-                  "See if you qualify in minutes.", fix_label="Suggested wording"),
+                  "See if you qualify in minutes."),
                 F("rate-claims", "body", "0% APR forever*", "“0% APR forever” isn't a rate ClearPath offers.",
-                  "fixed rates from 7.99% to 29.99% APR", fix_label="Suggested wording"),
+                  "fixed rates from 7.99% to 29.99% APR"),
                 F("affiliate-disclosure", None, None, "Never says the publisher is paid by ClearPath.",
-                  "Add at the top: “We earn a commission if you're approved through our links.”"),
+                  "We earn a commission if you're approved through our links."),
             ],
         }],
         "events": [("submitted", (0, 7), 1), ("check", (0, 7), "submit")],
@@ -404,8 +406,7 @@ ADS = [
             "findings": [
                 F("paid-testimonials", "headline", "I paid off my cards in a month with ClearPath",
                   "A paid post, but it isn't labeled as a paid partnership.",
-                  "Paid partnership with ClearPath. I paid off my cards in a month with ClearPath",
-                  fix_label="Suggested wording"),
+                  "Paid partnership with ClearPath. I paid off my cards in a month with ClearPath"),
             ],
         }],
         "events": [("submitted", (0, 7), 1), ("check", (0, 7), "submit")],
@@ -422,7 +423,7 @@ ADS = [
             "findings": [
                 F("trigger-terms", "headline", "Your first card. No annual fee.",
                   "“No annual fee” is a trigger term, so the ad also needs the APR.",
-                  "Your first card. No annual fee. 21.24%–29.24% variable APR.", fix_label="Suggested wording"),
+                  "Your first card. No annual fee. 21.24%–29.24% variable APR."),
             ],
         }],
         "events": [("check", (1, 16), "pre-check"), ("submitted", (0, 10), 1), ("check", (0, 10), "submit")],
@@ -438,7 +439,7 @@ ADS = [
                 "check": (5, 10),
                 "findings": [
                     F("guarantees", "claim", "Guaranteed approval.", "Promises guaranteed approval.",
-                      "See if you qualify in minutes.", fix_label="Suggested wording", state="kept", sent=True),
+                      "See if you qualify in minutes.", state="kept", sent=True),
                 ],
             },
             {
@@ -449,8 +450,7 @@ ADS = [
                 "findings": [
                     F("clear-and-conspicuous", "claim", "No origination fee required. No late fees.",
                       "The fee claims are only qualified in the page footer, far from the claim.",
-                      "No origination fee required, and an optional one may lower your rate. No late fees.",
-                      fix_label="Suggested wording"),
+                      "No origination fee required, and an optional one may lower your rate. No late fees."),
                 ],
             },
         ],
@@ -481,8 +481,7 @@ ADS = [
                 "findings": [
                     F("savings-claims", "body", "Members save $4,200 on average when they consolidate card debt with ClearPath.",
                       "The savings claim doesn't say where the number comes from.",
-                      "2025 borrowers who consolidated card debt with ClearPath saved $4,200 on average. Results vary.",
-                      fix_label="Suggested wording"),
+                      "2025 borrowers who consolidated card debt with ClearPath saved $4,200 on average. Results vary."),
                 ],
             },
         ],
@@ -494,8 +493,7 @@ ADS = [
         "id": 11, "name": "Fixed rate Instagram", "format": "Instagram ad", "product": "personal_loan", "source": "internal",
         "status": "pending", "created": (1, 13), "updated": (0, 13), "due": 3,
         "versions": [{
-            "theme": {"bg": "#E3ECF8", "fg": "#1C3A66", "cta_bg": "#1C3A66", "cta_fg": "#FFFFFF", "fine": "#3D5A85",
-                      "shapes": [{"shape": "circle", "right": -40, "bottom": 120, "w": 150, "h": 150, "color": "#7E97BC"}]},
+            "theme": {"bg": "#E3ECF8", "fg": "#1C3A66", "cta_bg": "#1C3A66", "cta_fg": "#FFFFFF", "fine": "#3D5A85"},
             "layers": FIXED_RATE_LAYERS,
             "submitted": (0, 13),
             "check": (0, 13),
@@ -514,7 +512,7 @@ ADS = [
             "findings": [
                 F("clear-and-conspicuous", "headline", "0% intro APR on balance transfers for 18 months",
                   "The intro rate doesn't say what the rate is after 18 months.",
-                  "Add the ongoing variable APR right after the intro rate.",
+                  "0% intro APR on balance transfers for 18 months, then 20.24%–28.24% variable APR",
                   state="dismissed", dismiss_reason="Covered by my finding."),
                 R("Add “then 20.24%–28.24% variable APR” right after the intro rate. No second review needed.", sent=True),
             ],
@@ -548,7 +546,7 @@ ADS = [
             "findings": [
                 F("savings-claims", "headline", "Grads save $3,000 a year",
                   "The savings claim has no evidence behind it.",
-                  "Remove the savings number, or link it to real borrower data.", state="kept", sent=True),
+                  "Graduate to one simple payment", state="kept", sent=True),
             ],
         }],
         "events": [("submitted", (13, 10), 1), ("check", (13, 10), "submit"),

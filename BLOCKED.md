@@ -44,3 +44,5 @@ The data model's `applies_to` allows products and/or "affiliate", but the 10-Add
 - **"Mark resolved" is manual.** The marketer marks a suggestion resolved by hand (a person decides, not the check). It moves to "Resolved by you" with a green pin, can be reopened, survives a live Re-check, and the reviewer sees "The submitter marked this resolved" on the card.
 - **Download ad (PNG)** in the View drawer, for Approved and Approved with changes ads only, so unapproved versions can't end up launched. It's drawn from the ad's data at full size and twice the pixel density.
 - **No uploads**, on purpose (see the README's What's next).
+- **Suggested fixes are words only.** The finding's sentence already says what's wrong, so the box holds just the words to use, with a copy button. Fixes that aren't about words (the tiny disclosure on Fall personal loan) show no box. This changes two wireframe lines: 05-Review's "Put the disclosure right under the rate, at a readable size." is gone, and 07-OtherFormats' "Add at the top: “…”" is now just the quoted sentence.
+- **Art never covers copy.** Decorative shapes that the copy can't avoid by shrinking the headline are hidden.

@@ -100,5 +100,9 @@ def test_seeded_wording_reads_correctly_in_place():
         for version in ad["versions"]:
             texts = {l["id"]: l["text"] for l in version["layers"]}
             for f in version["findings"]:
-                if f.get("fix_label") == "Suggested wording":
-                    assert f["quote"] and f["quote"] in texts[f["layer_id"]], (ad["name"], f["text"])
+                if f.get("suggested_fix") and f.get("quote"):
+                    assert f["quote"] in texts[f["layer_id"]], (ad["name"], f["text"])
+                if f.get("suggested_fix"):
+                    # Only the words to use; the finding's own text already says what to change.
+                    assert f["fix_label"] == "Suggested wording"
+                    assert f["suggested_fix"].split()[0] not in {"Add", "Put", "Move", "Remove", "Make", "Show"}, f["suggested_fix"]
