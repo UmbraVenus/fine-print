@@ -58,3 +58,29 @@ def test_first_requests_arriving_together_all_succeed(tmp_path):
         codes = list(pool.map(lambda path: client.get(path).status_code,
                               ["/api/nav", "/api/ads?view=queue", "/api/nav", "/api/rules", "/api/nav", "/api/ads?view=history"]))
     assert codes == [200] * 6
+
+
+def test_secret_link(monkeypatch):
+    monkeypatch.setenv("ACCESS_KEY", "s3cret-link-key")
+    client = create_app(":memory:").test_client()
+    assert client.get("/api/health").status_code == 200
+    blocked = client.get("/api/nav")
+    assert blocked.status_code == 401 and blocked.get_json()["code"] == "no_access"
+    assert client.post("/api/check", json={"adVersionId": 1}).status_code == 401  # no spending without the link
+    assert client.post("/api/access", json={"key": "wrong"}).status_code == 401
+    assert client.get("/api/access").status_code == 401
+
+    unlocked = client.post("/api/access", json={"key": "s3cret-link-key"})
+    assert unlocked.status_code == 200
+    cookie = unlocked.headers["Set-Cookie"]
+    assert "HttpOnly" in cookie and "s3cret-link-key" not in cookie
+    assert client.get("/api/access").status_code == 200
+    assert client.get("/api/nav").status_code == 200
+    assert client.get("/api/nav").headers["X-Robots-Tag"] == "noindex, nofollow"
+
+
+def test_no_access_key_means_open(monkeypatch):
+    monkeypatch.delenv("ACCESS_KEY", raising=False)
+    client = create_app(":memory:").test_client()
+    assert client.get("/api/nav").status_code == 200
+    assert client.get("/api/access").status_code == 200

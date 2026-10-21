@@ -9,14 +9,15 @@ import '@fontsource/inter/800.css'
 import '@fontsource/ibm-plex-mono/500.css'
 import './index.css'
 import App from './App.tsx'
+import { NoAccess, unlock } from './app/access.tsx'
 import { theme } from './theme.ts'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ConfigProvider theme={theme}>
-      <AntApp>
-        <App />
-      </AntApp>
-    </ConfigProvider>
-  </StrictMode>,
+void unlock().then((ok) =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ConfigProvider theme={theme}>
+        <AntApp>{ok ? <App /> : <NoAccess />}</AntApp>
+      </ConfigProvider>
+    </StrictMode>,
+  ),
 )

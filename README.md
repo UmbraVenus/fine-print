@@ -52,9 +52,11 @@ The frontend is a static Vite build. The API is one Python serverless function (
    | `ANTHROPIC_API_KEY` | Your Anthropic API key. Without it the app still works, but Re-check shows "Auto check unavailable right now". |
    | `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5-5` |
    | `WORKSPACE_TZ` | Optional. Defaults to `America/Los_Angeles` (what "Today" means) |
+   | `ACCESS_KEY` | A long random value, for example from `openssl rand -hex 16`. The site then opens only from the secret link below. Leave it out to keep the site open. |
 
 4. **Deploy.** Then open the site and press **Reset sample data** once. The first request creates the tables and seeds the workspace, in about 190 batched statements.
-5. **Check it in a private window:** dates read "Today", the Queue shows 9 waiting and 4 due today, and the History numbers agree with each other.
+5. **Share the secret link:** `https://<your-app>.vercel.app/?key=<ACCESS_KEY>`. The first visit saves a cookie for 30 days and drops the key from the address bar, so the page can be bookmarked. Without it, visitors (and bots) get "This link isn't valid", and the API refuses them, so nobody else can run up live checks. Pages also ask search engines not to index them. For a hard cost limit, make the API key in its own Anthropic Console workspace with a monthly spend limit.
+6. **Check it in a private window:** dates read "Today", the Queue shows 9 waiting and 4 due today, and the History numbers agree with each other.
 
 ## Assumptions
 

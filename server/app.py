@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 from flask import Flask, g, jsonify, request
 
-from . import actions, checker, repo
+from . import access, actions, checker, repo
 from .dates import iso, local_date, utcnow
 from .db import Db, connect, migrate
 from .seed import ensure_seeded, seed
@@ -17,6 +17,7 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     app = Flask(__name__)
     app.config["DATABASE_URL"] = database_url
     app.config["CLOCK"] = clock
+    access.install(app)
     state: dict[str, Any] = {"migrated": False, "memory": None}
     setup_lock = threading.Lock()
 
