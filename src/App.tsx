@@ -1,16 +1,19 @@
-import { useEffect } from 'react'
+import { Skeleton } from 'antd'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Shell } from './app/Shell'
 import { WorkspaceProvider, useWorkspace } from './app/workspace'
 import { ROLE_LABEL } from './lib/labels'
 import type { Role } from './lib/types'
-import { HistoryPage } from './pages/HistoryPage'
-import { MyAdsPage } from './pages/MyAdsPage'
-import { NotFoundPage } from './pages/NotFoundPage'
-import { PreCheckPage } from './pages/PreCheckPage'
-import { QueuePage } from './pages/QueuePage'
-import { ReviewPage } from './pages/ReviewPage'
-import { RulesPage } from './pages/RulesPage'
+
+// Each page loads when it's first opened, so the first screen arrives sooner.
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then((m) => ({ default: m.HistoryPage })))
+const MyAdsPage = lazy(() => import('./pages/MyAdsPage').then((m) => ({ default: m.MyAdsPage })))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
+const PreCheckPage = lazy(() => import('./pages/PreCheckPage').then((m) => ({ default: m.PreCheckPage })))
+const QueuePage = lazy(() => import('./pages/QueuePage').then((m) => ({ default: m.QueuePage })))
+const ReviewPage = lazy(() => import('./pages/ReviewPage').then((m) => ({ default: m.ReviewPage })))
+const RulesPage = lazy(() => import('./pages/RulesPage').then((m) => ({ default: m.RulesPage })))
 
 const TITLES: Array<[RegExp, string]> = [
   [/^\/my-ads/, 'My ads'],
@@ -46,6 +49,7 @@ function AppRoutes() {
   return (
     <Shell>
       <DocumentTitle />
+      <Suspense fallback={<Skeleton active paragraph={{ rows: 8 }} />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/my-ads" element={<ForRole role="marketer"><MyAdsPage /></ForRole>} />
@@ -56,6 +60,7 @@ function AppRoutes() {
         <Route path="/rules" element={<RulesPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
     </Shell>
   )
 }

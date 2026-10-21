@@ -29,7 +29,7 @@
 - **10-Add a rule** has a fourth "Affiliate content" checkbox (see BLOCKED.md).
 - **The decision bar** sticks to the bottom of the window, so Approve is always in reach. At the end of the page it sits exactly where the wireframe puts it.
 - **Rows per page** is an antd Select, not a native select. The format filter also lists "Instagram post", which only affiliates use.
-- [ ] M8 · README
+- [x] **M8 · README**: what it is, with the headline number; how to run; how to deploy (Vercel + Turso + env vars); assumptions; what's next; and a short tour script. Seeding now uses batched multi-row inserts (about 190 statements in total), so Reset is quick on Turso too. `vercel.json` bundles the `server/` package with the API function.
 
 ## Ideas, not built
 

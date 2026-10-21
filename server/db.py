@@ -49,9 +49,19 @@ class Db:
         cur = self.conn.execute(sql, tuple(params))
         return cur.lastrowid
 
-    def many(self, sql: str, rows: list[tuple]) -> None:
-        if rows:
-            self.conn.executemany(sql, rows)
+    def many(self, sql: str, rows: list[tuple], chunk: int = 400) -> None:
+        """
+        Insert many rows as multi-row INSERTs. On Turso every statement is a network round trip,
+        so thousands of single-row inserts would take minutes; a few dozen batches take seconds.
+        """
+        if not rows:
+            return
+        head, values = sql.split("VALUES", 1)
+        placeholder = values.strip()
+        for start in range(0, len(rows), chunk):
+            batch = rows[start:start + chunk]
+            statement = f"{head}VALUES {', '.join([placeholder] * len(batch))}"
+            self.conn.execute(statement, tuple(v for row in batch for v in row))
 
     def insert(self, table: str, values: dict) -> int:
         cols = list(values)
