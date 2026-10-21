@@ -10,6 +10,7 @@ import json
 from datetime import date, datetime, timedelta
 
 from . import filler
+from .quotes import anchor
 from .dates import add_business_days, at_local, iso, local_date, utcnow
 from .db import Db
 from .seed_data import ADS, FORMAT_TEMPLATES, RULES, rule_applies
@@ -105,6 +106,8 @@ def _seed_ad(db: Db, ad: dict, clock: Clock) -> None:
         for position, finding in enumerate(version["findings"]):
             origin = finding.get("origin", "auto")
             rule = rules.get(finding["rule_id"]) if finding["rule_id"] else None
+            if origin == "reviewer":
+                finding = {**finding, **dict(zip(("layer_id", "quote"), anchor(finding["text"], version["layers"])))}
             row = {
                 "ad_version_id": version_id,
                 "check_run_id": run_id if origin == "auto" else None,

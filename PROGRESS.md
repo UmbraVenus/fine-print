@@ -44,6 +44,7 @@
 - Fixed: two first requests arriving together could both run a new migration ("duplicate column name"), and a half-finished one failed on every restart. Setup now runs one request at a time, and a column that's already there is skipped.
 - The error page has "Back to Queue" (or My ads), and shows the error itself when running locally.
 - Pre-check has Previous / "1 of 2" / Next, like Review: it steps through the marketer's ads that need attention (Draft and Changes required), in My ads order.
+- Reviewer findings that put words from the ad in quotation marks are pinned to them (a person pin, so it's never confused with a numbered auto finding): on Review, on the marketer's Pre-check (with Edit on ad), and in What changed, where they count as resolved once the words are gone. Nothing quoted, or words not on the ad: plain text, as before. Check: `e2e/reviewer-quotes.spec.ts` and `test_quoted_words_in_a_reviewer_finding_pin_it_to_the_ad`.
 
 ## Ideas, not built
 

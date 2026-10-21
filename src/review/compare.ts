@@ -19,6 +19,8 @@ export interface Comparison {
   added: Finding[]
   /** The reviewer's own findings on the previous version. */
   reviewerNotes: Finding[]
+  /** Reviewer findings whose quoted words are still on the new version. */
+  reviewerStillOpen: Finding[]
 }
 
 const key = (f: Finding) => `${f.rule_id}|${f.layer_id ?? '-'}`
@@ -78,13 +80,29 @@ export function compareVersions(detail: AdDetail): Comparison | null {
       return { n: i + 1, finding, rule: finding.rule_id ? byRule.get(finding.rule_id) ?? null : null, how, layerId }
     })
 
+  // A reviewer finding that quoted words on the ad is resolved once those words are gone.
+  const reviewerNotes = previous.findings.filter((f) => f.origin === 'reviewer' && f.sent_to_submitter)
+  const quotedNotes = reviewerNotes.filter((f) => f.layer_id && f.quote)
+  const stillThere = (f: Finding) => Boolean(newLayers.get(f.layer_id!)?.text.includes(f.quote!))
+  for (const finding of quotedNotes.filter((f) => !stillThere(f))) {
+    const after = newLayers.get(finding.layer_id!)
+    resolved.push({
+      n: resolved.length + 1,
+      finding,
+      rule: null,
+      how: after ? `Reworded ${quoted(finding.quote!, 60)}` : `Removed ${quoted(finding.quote!)}`,
+      layerId: after ? after.id : null,
+    })
+  }
+
   return {
     previous,
     current,
     resolved,
     stillOpen: now.filter((f) => sentKeys.has(key(f))),
     added: now.filter((f) => !sentKeys.has(key(f))),
-    reviewerNotes: previous.findings.filter((f) => f.origin === 'reviewer' && f.sent_to_submitter),
+    reviewerNotes,
+    reviewerStillOpen: quotedNotes.filter(stillThere),
   }
 }
 

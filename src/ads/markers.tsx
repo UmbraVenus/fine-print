@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
+import { Icon } from '../components/Icon'
 
 /** A finding drawn on the ad: a numbered pin anchored to a layer, and to a quote inside it when there is one. */
 export interface Marker {
@@ -9,6 +10,8 @@ export interface Marker {
   missingLabel?: string
   label?: string
   tone?: 'default' | 'resolved'
+  /** A reviewer's own finding: its pin shows a person, not a number. */
+  kind?: 'auto' | 'reviewer'
 }
 
 export interface MarkerState {
@@ -70,7 +73,8 @@ function markerColor(marker: Marker, selected: boolean): string {
 }
 
 function pinLabel(marker: Marker): string {
-  const prefix = marker.tone === 'resolved' ? `Resolved ${marker.n}` : `Finding ${marker.n}`
+  const prefix =
+    marker.kind === 'reviewer' ? 'Reviewer finding' : marker.tone === 'resolved' ? `Resolved ${marker.n}` : `Finding ${marker.n}`
   return marker.label ? `${prefix}: ${marker.label}` : prefix
 }
 
@@ -118,7 +122,7 @@ function Pin({
         ...style,
       }}
     >
-      {marker.n}
+      {marker.kind === 'reviewer' ? <Icon name="person" size={Math.round(size * 0.6)} strokeWidth={2.6} /> : marker.n}
     </button>
   )
 }

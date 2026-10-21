@@ -9,6 +9,7 @@ from datetime import datetime
 from . import repo
 from .dates import iso
 from .db import Db
+from .quotes import anchor
 
 DECISIONS = ("approved", "approved_with_changes", "changes_required", "rejected")
 # Decisions that send the kept suggestions and the reviewer's findings to the submitter.
@@ -85,8 +86,11 @@ def add_reviewer_finding(db: Db, ad_id: int, text: str | None, now: datetime) ->
     version = _current_version(db, ad)
     position = (db.scalar("SELECT MAX(position) FROM findings WHERE ad_version_id = ? AND origin = 'reviewer'",
                           (version["id"],)) or 0) + 1
+    text = _clean(text, "The finding")
+    # Quoted words that are on the ad pin the finding to them, like an auto finding.
+    layer_id, quote = anchor(text, json.loads(version["layers"]))
     finding_id = db.insert("findings", {
-        "ad_version_id": version["id"], "origin": "reviewer", "text": _clean(text, "The finding"),
+        "ad_version_id": version["id"], "origin": "reviewer", "text": text, "layer_id": layer_id, "quote": quote,
         "state": "open", "position": position, "created_at": iso(now),
     })
     db.commit()
@@ -97,7 +101,10 @@ def edit_reviewer_finding(db: Db, finding_id: int, text: str | None) -> dict:
     finding = _finding(db, finding_id)
     if finding["origin"] != "reviewer":
         raise ActionError("Only your own findings can be edited this way")
-    db.update("findings", finding_id, {"text": _clean(text, "The finding")})
+    text = _clean(text, "The finding")
+    version = db.one("SELECT layers FROM ad_versions WHERE id = ?", (finding["ad_version_id"],))
+    layer_id, quote = anchor(text, json.loads(version["layers"]))
+    db.update("findings", finding_id, {"text": text, "layer_id": layer_id, "quote": quote})
     db.commit()
     return _finding(db, finding_id)
 

@@ -6,7 +6,7 @@ import { useWorkspace } from '../app/workspace'
 import { Icon } from '../components/Icon'
 import { Pager } from '../components/Pager'
 import { StatusTag, Tag } from '../components/StatusTag'
-import { CountTags, GoodList, Group, markersFor, numberFindings, revealCard, revealPin } from '../findings/parts'
+import { CountTags, GoodList, Group, markersFor, numberFindings, revealCard, revealPin, reviewerMarkers } from '../findings/parts'
 import { api, ApiError } from '../lib/api'
 import { dayPhrase } from '../lib/dates'
 import { sentText, type AdDetail } from '../lib/detail'
@@ -105,12 +105,17 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
   const layerIds = useMemo(() => new Set(current.layers.map((l) => l.id)), [current.layers])
   const comparison = useMemo(() => (resubmission ? compareVersions(detail) : null), [resubmission, detail])
   const changed = useMemo(() => (comparison ? openItems(comparison, rules) : null), [comparison, rules])
+  // The reviewer's own findings on this version, pinned where they quote words on the ad.
+  const yours = useMemo(() => reviewerMarkers(current.findings, current.layers), [current.findings, current.layers])
+  const pinnedIds = useMemo(() => new Set(yours.map((m) => -m.n)), [yours])
   const markers = useMemo(
-    () =>
-      comparison && changed
+    () => [
+      ...(comparison && changed
         ? compareMarkers(comparison, [...changed.stillOpen, ...changed.added], layerIds)
-        : markersFor(numbered, textTemplate, layerIds),
-    [comparison, changed, numbered, textTemplate, layerIds],
+        : markersFor(numbered, textTemplate, layerIds)),
+      ...yours,
+    ],
+    [comparison, changed, numbered, textTemplate, layerIds, yours],
   )
   const active = numbered.filter((x) => x.finding.state !== 'dismissed')
   const critical = active.filter((x) => x.finding.severity === 'critical')
@@ -285,6 +290,9 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
             onAdd={(text) => run(() => api.post(`/api/ads/${ad.id}/findings`, { text }))}
             onEdit={(id, text) => run(() => api.put(`/api/reviewer-findings/${id}`, { text }))}
             onDelete={(id) => run(() => api.del(`/api/reviewer-findings/${id}`))}
+            pinnedIds={pinnedIds}
+            selected={selected}
+            onSelect={selectFromCard}
           />
         </div>
         <div style={{ flex: '1 1 420px', minWidth: 0 }}>{groups}</div>

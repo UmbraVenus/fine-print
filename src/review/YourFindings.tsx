@@ -1,6 +1,7 @@
 import { Button, Input, Popconfirm } from 'antd'
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
+import { ReviewerPin, reviewerN } from '../findings/parts'
 import type { Finding } from '../lib/detail'
 
 const textButton = {
@@ -19,30 +20,45 @@ function ReviewerCard({
   onEdit,
   onDelete,
   readOnly,
+  pinned,
+  selected,
+  onSelect,
 }: {
   finding: Finding
   onEdit: (text: string) => Promise<void>
   onDelete: () => Promise<void>
   readOnly: boolean
+  /** Its quoted words are on the ad, with a pin. */
+  pinned: boolean
+  selected: boolean
+  onSelect: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(finding.text)
   return (
     <div
+      id={`finding-${reviewerN(finding)}`}
+      onClick={pinned ? onSelect : undefined}
       style={{
-        border: '1px solid #E3E6EC',
+        border: `1px solid ${selected ? '#0F766E' : '#E3E6EC'}`,
         borderLeft: '3px solid #0F766E',
+        boxShadow: selected ? '0 0 0 1px #0F766E' : undefined,
         borderRadius: 10,
         padding: '14px 16px',
         display: 'flex',
         flexDirection: 'column',
         gap: 8,
+        scrollMarginTop: 24,
+        scrollMarginBottom: 120,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, letterSpacing: '0.04em', color: '#115E59' }}>FROM YOU</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {pinned && <ReviewerPin selected={selected} onSelect={onSelect} />}
+          <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, letterSpacing: '0.04em', color: '#115E59' }}>FROM YOU</span>
+        </span>
         {!readOnly && !editing && (
-          <span style={{ display: 'flex', gap: 4 }}>
+          <span style={{ display: 'flex', gap: 4 }} onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="fp-text-button"
@@ -63,7 +79,7 @@ function ReviewerCard({
         )}
       </div>
       {editing ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} onClick={(e) => e.stopPropagation()}>
           <Input.TextArea aria-label="Edit your finding" autoFocus autoSize={{ minRows: 2, maxRows: 8 }} value={draft} onChange={(e) => setDraft(e.target.value)} />
           <div style={{ display: 'flex', gap: 8 }}>
             <Button
@@ -96,12 +112,19 @@ export function YourFindings({
   onEdit,
   onDelete,
   readOnly,
+  pinnedIds,
+  selected,
+  onSelect,
 }: {
   findings: Finding[]
   onAdd: (text: string) => Promise<void>
   onEdit: (id: number, text: string) => Promise<void>
   onDelete: (id: number) => Promise<void>
   readOnly: boolean
+  /** Findings whose quoted words are pinned on the ad. */
+  pinnedIds: Set<number>
+  selected: number | null
+  onSelect: (n: number) => void
 }) {
   const [text, setText] = useState('')
   const [adding, setAdding] = useState(false)
@@ -155,6 +178,9 @@ export function YourFindings({
           readOnly={readOnly}
           onEdit={(t) => onEdit(finding.id, t)}
           onDelete={() => onDelete(finding.id)}
+          pinned={pinnedIds.has(finding.id)}
+          selected={selected === reviewerN(finding)}
+          onSelect={() => onSelect(reviewerN(finding))}
         />
       ))}
       {!readOnly && (

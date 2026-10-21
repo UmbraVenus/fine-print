@@ -91,3 +91,17 @@ def test_approve_with_changes_turns_the_change_into_a_finding(db):
     assert [f["text"] for f in sent] == ["Add “See rates and fees” after the APR."]
     actions.undo(db, result["undo"])
     assert current_findings(db, 11) == []
+
+
+def test_quoted_words_in_a_reviewer_finding_pin_it_to_the_ad(db):
+    # Fall personal loan's headline is "Personal loans as low as 7.99% APR".
+    pinned = actions.add_reviewer_finding(db, 3, "Say “As low as 7.99% APR” only with the full range.", NOW)
+    assert (pinned["layer_id"], pinned["quote"]) == ("headline", "as low as 7.99% APR")  # case forgiven, exact words kept
+    # Words that aren't on the ad, or no quotation marks at all: plain text, as before.
+    assert actions.add_reviewer_finding(db, 3, 'Add "then 20.24% variable APR" after it.', NOW)["layer_id"] is None
+    assert actions.add_reviewer_finding(db, 3, "Pick another photo.", NOW)["quote"] is None
+    # Editing re-reads the quote.
+    edited = actions.edit_reviewer_finding(db, pinned["id"], "Pick another photo.")
+    assert edited["layer_id"] is None and edited["quote"] is None
+    repinned = actions.edit_reviewer_finding(db, pinned["id"], 'Reword "Checking your rate".')
+    assert (repinned["layer_id"], repinned["quote"]) == ("body", "Checking your rate")

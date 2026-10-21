@@ -4,6 +4,7 @@ import { FilledIcon, Icon } from '../components/Icon'
 import { SeverityTag } from '../components/StatusTag'
 import type { Finding, Rule } from '../lib/detail'
 import type { Marker } from '../ads/markers'
+import type { Layer } from '../lib/types'
 
 export interface Numbered {
   n: number
@@ -39,6 +40,48 @@ export function markersFor(numbered: Numbered[], textTemplate: boolean, layerIds
         missingLabel: onAd ? undefined : missingLabel(rule, textTemplate),
       }
     })
+}
+
+/** A reviewer finding's pin and card share this number; negative, so it never meets an auto finding's. */
+export const reviewerN = (finding: Finding) => -finding.id
+
+/** Pins for the reviewer's findings whose quoted words are still on this version of the ad. */
+export function reviewerMarkers(findings: Finding[], layers: Layer[]): Marker[] {
+  const texts = new Map(layers.map((l) => [l.id, l.text]))
+  return findings
+    .filter((f) => f.origin === 'reviewer' && f.layer_id && f.quote && texts.get(f.layer_id)?.includes(f.quote))
+    .map((f) => ({ n: reviewerN(f), layerId: f.layer_id, quote: f.quote, label: f.text, kind: 'reviewer' as const }))
+}
+
+/** The person pin on a reviewer finding's card; a button that shows the quoted words on the ad. */
+export function ReviewerPin({ selected, onSelect }: { selected: boolean; onSelect: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Show the quoted words on the ad"
+      aria-pressed={selected}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect()
+      }}
+      style={{
+        flexShrink: 0,
+        width: 24,
+        height: 24,
+        borderRadius: 9999,
+        background: selected ? '#0F766E' : '#15213B',
+        color: '#FFFFFF',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: 'none',
+        padding: 0,
+        cursor: 'pointer',
+      }}
+    >
+      <Icon name="person" size={14} strokeWidth={2.6} />
+    </button>
+  )
 }
 
 export function CountTags({

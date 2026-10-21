@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AdView } from '../ads/AdView'
 import type { Marker } from '../ads/markers'
 import { SeverityTag } from '../components/StatusTag'
-import { Group, NumberBadge, cardStyle, type Numbered } from '../findings/parts'
+import { Group, NumberBadge, ReviewerPin, cardStyle, reviewerN, type Numbered } from '../findings/parts'
 import type { Rule } from '../lib/detail'
 import { ReviewSuggestionCard, type SuggestionActions } from './SuggestionCards'
 import { previousSummary, type Comparison } from './compare'
@@ -35,7 +35,14 @@ export function compareMarkers(comparison: Comparison, open: Numbered[], layerId
       missingLabel: onAd ? undefined : `No ${rule?.name.toLowerCase() ?? 'required element'} on this ad`,
     }
   })
-  return [...resolved, ...remaining]
+  const yours: Marker[] = comparison.reviewerStillOpen.map((f) => ({
+    n: reviewerN(f),
+    layerId: f.layer_id,
+    quote: f.quote,
+    label: f.text,
+    kind: 'reviewer',
+  }))
+  return [...resolved, ...remaining, ...yours]
 }
 
 /** v1 above v2, so the reviewer sees only what changed. Resolved items are green on v2. */
@@ -90,7 +97,10 @@ export function WhatChanged({
   // Picking a pin on the ad opens the group its card is in.
   const open = {
     resolved: userOpen.resolved || comparison.resolved.some((r) => r.n === selected),
-    stillOpen: userOpen.stillOpen || stillOpen.some((x) => x.n === selected),
+    stillOpen:
+      userOpen.stillOpen ||
+      stillOpen.some((x) => x.n === selected) ||
+      comparison.reviewerStillOpen.some((f) => reviewerN(f) === selected),
     added: userOpen.added || added.some((x) => x.n === selected),
   }
   const openFindings = [...stillOpen, ...added]
@@ -135,8 +145,14 @@ export function WhatChanged({
                 </p>
               )}
               <p className="fp-mono" style={{ margin: 0, fontSize: 12, lineHeight: '16px', color: '#4A5468' }}>
-                Was {item.finding.severity === 'critical' ? 'Critical' : 'Caution'}
-                {item.rule && ` · ${item.rule.category} · ${item.rule.name}`}
+                {item.finding.origin === 'reviewer' ? (
+                  'Was your finding'
+                ) : (
+                  <>
+                    Was {item.finding.severity === 'critical' ? 'Critical' : 'Caution'}
+                    {item.rule && ` · ${item.rule.category} · ${item.rule.name}`}
+                  </>
+                )}
               </p>
             </div>
           </article>
@@ -146,13 +162,32 @@ export function WhatChanged({
       <Group
         id="still-open"
         kind="neutral"
-        title={`Still open · ${stillOpen.length}`}
+        title={`Still open · ${stillOpen.length + comparison.reviewerStillOpen.length}`}
         open={open.stillOpen}
         onToggle={() => setOpen((o) => ({ ...o, stillOpen: !open.stillOpen }))}
       >
-        {stillOpen.length === 0 && <p style={{ margin: 0, fontSize: 14, color: '#4A5468' }}>Everything sent back was fixed.</p>}
+        {stillOpen.length + comparison.reviewerStillOpen.length === 0 && (
+          <p style={{ margin: 0, fontSize: 14, color: '#4A5468' }}>Everything sent back was fixed.</p>
+        )}
         {stillOpen.map((item) => (
           <ReviewSuggestionCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => onSelect(item.n)} actions={actions} readOnly={readOnly} />
+        ))}
+        {comparison.reviewerStillOpen.map((finding) => (
+          <article
+            key={finding.id}
+            id={`finding-${reviewerN(finding)}`}
+            style={cardStyle(selected === reviewerN(finding))}
+            onClick={() => onSelect(reviewerN(finding))}
+            aria-label="Your finding, still open"
+          >
+            <ReviewerPin selected={selected === reviewerN(finding)} onSelect={() => onSelect(reviewerN(finding))} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600 }}>{finding.text}</p>
+              <p className="fp-mono" style={{ margin: 0, fontSize: 12, lineHeight: '16px', color: '#4A5468' }}>
+                Your finding on version {comparison.previous.version}
+              </p>
+            </div>
+          </article>
         ))}
       </Group>
 

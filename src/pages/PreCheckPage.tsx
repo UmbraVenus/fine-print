@@ -13,12 +13,15 @@ import {
   NoteBox,
   Group,
   NumberBadge,
+  ReviewerPin,
   RuleLine,
   cardStyle,
   markersFor,
   numberFindings,
   revealCard,
   revealPin,
+  reviewerMarkers,
+  reviewerN,
   type Numbered,
 } from '../findings/parts'
 import { api, ApiError } from '../lib/api'
@@ -215,7 +218,20 @@ function PreCheckCard({
   )
 }
 
-function FromReviewer({ detail }: { detail: AdDetail }) {
+function FromReviewer({
+  detail,
+  pinnedIds,
+  selected,
+  onSelect,
+  onEditOnAd,
+}: {
+  detail: AdDetail
+  /** Reviewer findings whose quoted words are pinned on the ad. */
+  pinnedIds: Set<number>
+  selected: number | null
+  onSelect: (n: number) => void
+  onEditOnAd: (layerId: string) => void
+}) {
   const sent = detail.current.findings.filter((f) => f.sent_to_submitter)
   const decision = detail.events.find((e) => e.type === 'decision')
   const note = typeof decision?.detail.message === 'string' ? decision.detail.message : null
@@ -226,16 +242,36 @@ function FromReviewer({ detail }: { detail: AdDetail }) {
         From your reviewer
       </h2>
       {note && <NoteBox label="Message" text={note} />}
-      {sent.map((finding) => (
-        <div key={finding.id} className="fp-sent-card">
-          <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 500 }}>{sentText(finding)}</p>
-          {finding.origin === 'auto' && finding.suggested_fix && (
-            <p style={{ margin: 0, fontSize: 14, lineHeight: '20px', color: '#4A5468' }}>
-              {finding.fix_label}: {finding.suggested_fix}
-            </p>
-          )}
-        </div>
-      ))}
+      {sent.map((finding) => {
+        const pinned = pinnedIds.has(finding.id)
+        const n = reviewerN(finding)
+        return (
+          <div
+            key={finding.id}
+            id={`finding-${n}`}
+            className="fp-sent-card"
+            onClick={pinned ? () => onSelect(n) : undefined}
+            style={pinned ? { cursor: 'pointer', ...(selected === n ? { borderColor: '#0F766E', boxShadow: '0 0 0 1px #0F766E' } : {}) } : undefined}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              {pinned && <ReviewerPin selected={selected === n} onSelect={() => onSelect(n)} />}
+              <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 500 }}>{sentText(finding)}</p>
+            </div>
+            {finding.origin === 'auto' && finding.suggested_fix && (
+              <p style={{ margin: 0, fontSize: 14, lineHeight: '20px', color: '#4A5468' }}>
+                {finding.fix_label}: {finding.suggested_fix}
+              </p>
+            )}
+            {pinned && finding.layer_id && (
+              <div style={{ marginLeft: -8 }} onClick={(e) => e.stopPropagation()}>
+                <button type="button" className="fp-quiet fp-small-button fp-card-link" onClick={() => onEditOnAd(finding.layer_id!)}>
+                  Edit on ad
+                </button>
+              </div>
+            )}
+          </div>
+        )
+      })}
     </section>
   )
 }
@@ -260,12 +296,21 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const numbered = useMemo(() => numberFindings(working.findings, rules), [working.findings, rules])
   const layerIds = useMemo(() => new Set(working.layers.map((l) => l.id)), [working.layers])
   // A suggestion the marketer marked resolved shows a green pin and moves to its own group.
+  // The reviewer's findings that quote words still on the copy being edited get a pin too.
+  const sentFindings = detail.current.findings
+  const fromReviewer = useMemo(
+    () => (ad.status === 'changes_required' ? reviewerMarkers(sentFindings.filter((f) => f.sent_to_submitter), working.layers) : []),
+    [ad.status, sentFindings, working.layers],
+  )
+  const pinnedIds = useMemo(() => new Set(fromReviewer.map((m) => -m.n)), [fromReviewer])
   const markers = useMemo(
-    () =>
-      markersFor(numbered, textTemplate, layerIds).map((m) =>
+    () => [
+      ...markersFor(numbered, textTemplate, layerIds).map((m) =>
         numbered.find((x) => x.n === m.n)?.finding.resolved_by_submitter ? { ...m, tone: 'resolved' as const } : m,
       ),
-    [numbered, textTemplate, layerIds],
+      ...fromReviewer,
+    ],
+    [numbered, textTemplate, layerIds, fromReviewer],
   )
   const unresolved = numbered.filter((x) => !x.finding.resolved_by_submitter)
   const resolvedItems = numbered.filter((x) => x.finding.resolved_by_submitter)
@@ -397,7 +442,9 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
         </section>
 
         <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {ad.status === 'changes_required' && <FromReviewer detail={detail} />}
+          {ad.status === 'changes_required' && (
+            <FromReviewer detail={detail} pinnedIds={pinnedIds} selected={selected} onSelect={selectFromCard} onEditOnAd={editOnAd} />
+          )}
           <section className="fp-card fp-panel" aria-labelledby="auto-suggestions" aria-busy={checking}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <h2 id="auto-suggestions" className="fp-panel-title">
