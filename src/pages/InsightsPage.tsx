@@ -29,27 +29,51 @@ const AFFILIATE_TAG = {
   at_risk: { kind: 'critical', label: 'At risk' },
 } as const
 
-/** A teal line through the weekly values; the trend badge and note carry the meaning in words. */
-function Sparkline({ series, label }: { series: Array<number | null>; label: string }) {
+/** How each metric's values read on the chart's axis. */
+const FORMAT: Record<string, (v: number) => string> = {
+  approved: (v) => `${Math.round(v)}`,
+  turnaround: (v) => `${Math.round(v)}h`,
+  rounds: (v) => v.toFixed(1),
+  first_round: (v) => `${Math.round(v)}%`,
+}
+
+/** The weekly values as a small line chart, with its scale: highest and lowest on the left, weeks along the bottom. */
+function Sparkline({ series, label, format }: { series: Array<number | null>; label: string; format: (v: number) => string }) {
   const points = series.map((v, i) => [i, v] as const).filter((p): p is readonly [number, number] => p[1] !== null)
   if (points.length < 2) return null
   const values = points.map((p) => p[1])
   const min = Math.min(...values)
-  const range = Math.max(...values) - min || 1
+  const max = Math.max(...values)
+  const range = max - min || 1
   const width = 180
-  const height = 32
+  const height = 48
   const step = width / (series.length - 1)
-  const line = points.map(([i, v]) => `${(i * step).toFixed(1)},${(height - 2 - ((v - min) / range) * (height - 4)).toFixed(1)}`).join(' ')
+  const y = (v: number) => height - 3 - ((v - min) / range) * (height - 6)
+  const line = points.map(([i, v]) => `${(i * step).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  const axis = { fontSize: 11, lineHeight: '14px', color: '#6B7385' } as const
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      role="img"
-      aria-label={`${label}, week by week: from ${values[0]} to ${values[values.length - 1]}`}
-      style={{ width: '100%', height }}
-    >
-      <polyline points={line} fill="none" stroke="#0F766E" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-    </svg>
+    <figure style={{ margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 8, rowGap: 4 }}>
+      <div aria-hidden="true" style={{ ...axis, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', textAlign: 'right' }}>
+        <span>{format(max)}</span>
+        <span>{format(min)}</span>
+      </div>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`${label}, week by week from 8 weeks ago to this week: ${values.map(format).join(', ')}`}
+        style={{ width: '100%', height, display: 'block' }}
+      >
+        <line x1={0} x2={width} y1={y(max)} y2={y(max)} stroke="#EEF2F7" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+        <line x1={0} x2={width} y1={height - 0.5} y2={height - 0.5} stroke="#C9CED8" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+        <polyline points={line} fill="none" stroke="#0F766E" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <span />
+      <div aria-hidden="true" style={{ ...axis, display: 'flex', justifyContent: 'space-between' }}>
+        <span>8 wks ago</span>
+        <span>This week</span>
+      </div>
+    </figure>
   )
 }
 
@@ -64,8 +88,9 @@ function MetricCard({ metric }: { metric: Metric }) {
         {metric.trend && <TrendBadge trend={metric.trend} />}
       </div>
       <p style={{ margin: 0, fontSize: 13, lineHeight: '18px', color: '#4A5468', minHeight: 36 }}>{metric.note}</p>
-      <div style={{ marginTop: 6 }}>
-        <Sparkline series={metric.series} label={metric.label} />
+      {/* Pinned to the bottom, so the four charts line up whatever the text above them. */}
+      <div style={{ marginTop: 'auto', paddingTop: 6 }}>
+        <Sparkline series={metric.series} label={metric.label} format={FORMAT[metric.key] ?? String} />
       </div>
     </section>
   )
