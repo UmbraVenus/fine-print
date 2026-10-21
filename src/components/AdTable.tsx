@@ -5,8 +5,9 @@ import { useSearchParams } from 'react-router-dom'
 import { AdThumbnail } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
 import { query } from '../lib/api'
+import { isUpdated } from '../lib/seen'
 import { useApi } from '../lib/useApi'
-import { dayLabel, dayPhrase, daysBetween, shortDate, workspaceDate } from '../lib/dates'
+import { dayLabel, daysBetween, shortDate, workspaceDate } from '../lib/dates'
 import { PRODUCT_LABEL, STATUS_LABEL, plural, sourceLabel } from '../lib/labels'
 import type { AdList, AdRow, AdStatus, Stat } from '../lib/types'
 import { Icon } from './Icon'
@@ -20,12 +21,14 @@ interface ViewConfig {
   statusKey: 'status' | 'auto_check'
   dateTitle: string
   defaultOrder: 'asc' | 'desc'
+  /** A second date column: both My ads and the Queue show Updated and Due. */
+  secondTitle?: string
   empty: string
 }
 
 const VIEWS: Record<TableView, ViewConfig> = {
-  'my-ads': { statusTitle: 'Status', statusKey: 'status', dateTitle: 'Updated', defaultOrder: 'desc', empty: 'No ads yet.' },
-  queue: { statusTitle: 'Auto check', statusKey: 'auto_check', dateTitle: 'Due', defaultOrder: 'asc', empty: 'Queue cleared. Go get a snack.' },
+  'my-ads': { statusTitle: 'Status', statusKey: 'status', dateTitle: 'Updated', secondTitle: 'Due', defaultOrder: 'desc', empty: 'No ads yet.' },
+  queue: { statusTitle: 'Auto check', statusKey: 'auto_check', dateTitle: 'Due', secondTitle: 'Updated', defaultOrder: 'asc', empty: 'Queue cleared. Go get a snack.' },
   history: { statusTitle: 'Decision', statusKey: 'status', dateTitle: 'Closed', defaultOrder: 'desc', empty: 'No approved ads yet.' },
 }
 
@@ -58,7 +61,8 @@ function myAdsSubLine(row: AdRow, today: string): string {
     case 'changes_required':
       return `${plural(row.sent, 'comment')} from your reviewer`
     case 'pending':
-      return row.due_date ? `Due ${dayPhrase(row.due_date, today)}` : 'In review'
+      // The Due column has the date.
+      return 'With your reviewer'
     case 'approved_with_changes':
       return `${plural(row.sent, 'small edit')}, no second review`
     case 'approved':
@@ -68,13 +72,22 @@ function myAdsSubLine(row: AdRow, today: string): string {
   }
 }
 
-function DateCell({ view, row, today }: { view: TableView; row: AdRow; today: string }) {
-  if (view === 'queue' && row.due_date) {
-    if (daysBetween(today, row.due_date) < 0) {
-      return <span style={{ color: '#B42318', fontWeight: 600 }}>Overdue · {shortDate(row.due_date, today)}</span>
-    }
-    return <>{dayLabel(row.due_date, today)}</>
+/** A due date: Today, Tomorrow, or a day; red when it has passed. */
+function DueDate({ day, today }: { day: string; today: string }) {
+  if (daysBetween(today, day) < 0) {
+    return <span style={{ color: '#B42318', fontWeight: 600 }}>Overdue · {shortDate(day, today)}</span>
   }
+  return <>{dayLabel(day, today)}</>
+}
+
+/** The other date: Due on My ads (only ads in review have one), Updated on the Queue. */
+function SecondDateCell({ view, row, today }: { view: TableView; row: AdRow; today: string }) {
+  if (view === 'my-ads') return row.status === 'pending' && row.due_date ? <DueDate day={row.due_date} today={today} /> : <>–</>
+  return <>{row.updated_at ? dayLabel(row.updated_at, today) : '–'}</>
+}
+
+function DateCell({ view, row, today }: { view: TableView; row: AdRow; today: string }) {
+  if (view === 'queue' && row.due_date) return <DueDate day={row.due_date} today={today} />
   const value = view === 'history' ? row.closed_at : row.updated_at
   return <>{value ? dayLabel(value, today) : '–'}</>
 }
@@ -267,7 +280,7 @@ export function AdTable({
   const [, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [q, setQ] = useState('')
-  const [sort, setSort] = useState<{ key: 'name' | 'date' | 'check'; order: 'asc' | 'desc' }>({ key: 'date', order: config.defaultOrder })
+  const [sort, setSort] = useState<{ key: 'name' | 'date' | 'second' | 'check'; order: 'asc' | 'desc' }>({ key: 'date', order: config.defaultOrder })
   const [pageSize, setPageSize] = useState(10)
   const params = query({
     view,
@@ -345,6 +358,12 @@ export function AdTable({
                 {row.name}
               </button>
               {row.current_version > 1 && <span className="fp-version-chip">v{row.current_version}</span>}
+              {view !== 'history' && isUpdated(row.id, row.updated_at) && (
+                <span className="fp-updated-chip">
+                  <span aria-hidden="true" className="fp-updated-dot" />
+                  Updated
+                </span>
+              )}
             </span>
             <span style={{ fontSize: 13, lineHeight: '18px', color: '#4A5468' }}>
               {view === 'my-ads' ? myAdsSubLine(row, today) : sourceLabel(row.source)}
@@ -386,7 +405,7 @@ export function AdTable({
             }),
           }
         : {}),
-      width: 192,
+      width: 172,
       render: (_, row) =>
         view === 'queue' ? <AutoCheckTag critical={row.critical} caution={row.caution} /> : <StatusTag status={row.status} />,
     },
@@ -403,12 +422,28 @@ export function AdTable({
       render: (_, row) => <DateCell view={view} row={row} today={today} />,
     },
   ]
+  if (config.secondTitle) {
+    const second: TableColumnsType<AdRow>[number] = {
+      title: config.secondTitle,
+      key: 'second',
+      width: 96,
+      sorter: true,
+      sortOrder: sort.key === 'second' ? (sort.order === 'asc' ? 'ascend' : 'descend') : null,
+      sortDirections: ['ascend', 'descend', 'ascend'],
+      sortIcon: ({ sortOrder }) => <SortIcon sortOrder={sortOrder} />,
+      showSorterTooltip: false,
+      onHeaderCell: () => ({ className: sort.key === 'second' ? 'fp-th-sorted' : undefined }),
+      render: (_, row) => <SecondDateCell view={view} row={row} today={today} />,
+    }
+    // The same order on both tables: Updated, then Due.
+    columns.splice(view === 'queue' ? columns.length - 1 : columns.length, 0, second)
+  }
 
   if (view !== 'history') {
     columns.push({
       title: <span className="fp-visually-hidden">Action</span>,
       key: 'action',
-      width: 144,
+      width: 128,
       align: 'right',
       render: (_, row) => {
         if (view === 'queue') {
@@ -439,7 +474,7 @@ export function AdTable({
     }
     if (JSON.stringify(next) !== JSON.stringify(filters)) onFilters(next)
     const s = sorter as SorterResult<AdRow>
-    if (s.columnKey === 'name' || s.columnKey === 'date' || s.columnKey === 'status') {
+    if (s.columnKey === 'name' || s.columnKey === 'date' || s.columnKey === 'second' || s.columnKey === 'status') {
       const key = s.columnKey === 'status' ? 'check' : s.columnKey
       const order = s.order === 'ascend' ? 'asc' : s.order === 'descend' ? 'desc' : null
       if (order && (key !== sort.key || order !== sort.order)) {
@@ -477,7 +512,7 @@ export function AdTable({
         locale={{ emptyText: loading && !data ? ' ' : <div className="fp-table-empty">{empty}</div> }}
         tableLayout="fixed"
         // Below ~1100px the columns keep their widths and the table scrolls inside its card.
-        scroll={{ x: 880 }}
+        scroll={{ x: 980 }}
       />
       {data && data.total > 0 && (
         <Footer

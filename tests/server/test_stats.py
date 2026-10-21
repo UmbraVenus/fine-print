@@ -113,3 +113,13 @@ def test_queue_sorts_by_auto_check_severity(db):
     assert rows[-1]["critical"] == 0 and rows[-1]["caution"] == 0  # Good standing last
     up = repo.list_ads(db, "queue", sort="check", order="asc")["rows"]
     assert (up[0]["critical"], up[0]["caution"]) == (0, 0)
+
+
+def test_both_tables_sort_by_their_other_date(db):
+    mine = repo.list_ads(db, "my-ads", sort="second", order="asc", page_size=50)["rows"]
+    # My ads by due date: ads in review first, soonest first; the rest (no due date) after.
+    pending = [r for r in mine if r["status"] == "pending"]
+    assert mine[:len(pending)] == pending
+    assert [r["due_date"] for r in pending] == sorted(r["due_date"] for r in pending)
+    queue = repo.list_ads(db, "queue", sort="second", order="desc")["rows"]
+    assert [r["updated_at"] for r in queue] == sorted((r["updated_at"] for r in queue), reverse=True)

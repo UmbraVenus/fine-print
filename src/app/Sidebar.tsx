@@ -5,6 +5,7 @@ import { COMING_NEXT, ComingNextPopover, VoteMark } from '../components/ComingNe
 import { Icon, type IconName } from '../components/Icon'
 import { Logo } from '../components/Logo'
 import { api } from '../lib/api'
+import { resetSeen } from '../lib/seen'
 import { ROLE_LABEL } from '../lib/labels'
 import type { Role } from '../lib/types'
 import { useWorkspace } from './workspace'
@@ -62,6 +63,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     setResetting(true)
     try {
       await api.post('/api/reset')
+      resetSeen()
       message.success('Sample data reset')
       refresh()
       navigate(ROLE_LABEL[role].home)

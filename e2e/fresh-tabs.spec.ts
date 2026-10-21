@@ -16,3 +16,25 @@ test('the Queue updates when you come back from deciding in the Review tab', asy
   await expect(page.locator('tbody tr.ant-table-row')).toHaveCount(8)
   await expect(page.getByRole('link', { name: /^Review Fall personal loan/ })).toHaveCount(0)
 })
+
+test('an ad that changed since you last opened it is marked Updated, until you open it', async ({ page }) => {
+  await resetData(page)
+  await setRole(page, 'marketer')
+  await page.goto('/my-ads')
+  await expect(page.locator('tbody tr.ant-table-row')).toHaveCount(8)
+  await expect(page.locator('.fp-updated-chip')).toHaveCount(0)
+
+  // The reviewer sends Fall personal loan back.
+  await page.request.post('/api/ads/3/decision', { data: { status: 'changes_required', message: 'Fix the rate claim.' } })
+  await page.reload()
+  const row = page.locator('tbody tr', { hasText: 'Fall personal loan' })
+  await expect(row.locator('.fp-updated-chip')).toHaveText('Updated')
+  await expect(page.locator('.fp-updated-chip')).toHaveCount(1)
+
+  // Opening it clears the mark.
+  await row.getByRole('button', { name: 'Fall personal loan' }).click()
+  await expect(page.getByRole('dialog')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await page.reload()
+  await expect(page.locator('.fp-updated-chip')).toHaveCount(0)
+})

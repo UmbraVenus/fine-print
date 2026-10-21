@@ -52,6 +52,7 @@
 - Coming next takes votes: each roadmap item (in the sidebar, and as a quiet dashed button where it would live: My ads, Rules, History) opens a card with what it would do, "I'd use this", and the count. One vote per feature per browser (an anonymous cookie, deduped in the database); Reset keeps votes. Check: `e2e/coming-next.spec.ts`, `test_votes_count_each_browser_once_and_survive_a_reset`.
 - Insights: Open the Queue sits on the title line; card titles are bigger.
 - "Too small to read" can be fixed in Pre-check: Make it readable sets the layer to 11px (sizes are part of the ad's data; the server accepts 11–48px). On resubmit without a key, What changed counts it resolved. Coming next counts votes, not people.
+- My ads and the Queue both show Updated and Due (My ads sorts by Updated, the Queue by Due; both sortable). An "Updated" chip marks ads that changed since you last opened them (kept in the browser, cleared on open and on Reset). Lists refresh when you come back to the tab. Resolving is a check in the card's corner, and Swap resolves on its own.
 
 ## Ideas, not built
 

@@ -1111,3 +1111,23 @@ a.fp-pager:hover {
   border-color: #067647;
   color: #ffffff;
 }
+
+/* Changed since you last opened it, like unread mail. */
+.fp-updated-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+  color: #115e59;
+  background: var(--fp-primary-soft);
+  border-radius: 9999px;
+  padding: 1px 8px 1px 6px;
+}
+.fp-updated-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--fp-primary);
+}

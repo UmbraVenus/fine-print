@@ -68,12 +68,17 @@ def list_ads(db: Db, view: str, *, q: str = "", formats: list[str] | None = None
             outer = " WHERE " + " OR ".join(f"({c})" for c in clauses)
 
     sort_key, sort_order = DEFAULT_SORT[view]
-    if sort in ("name", "date") or (sort == "check" and view == "queue"):
+    if sort in ("name", "date") or (sort == "check" and view == "queue") or (sort == "second" and view != "history"):
         sort_key = sort
         sort_order = "asc" if order == "asc" else "desc"
     direction = "ASC" if sort_order == "asc" else "DESC"
     if sort_key == "name":
         order_by = f"name COLLATE NOCASE {direction}, id"
+    elif sort_key == "second" and view == "my-ads":
+        # Due dates belong to ads in review; the rest have none and go last.
+        order_by = f"(status != 'pending'), due_date {direction}, updated_at DESC, id"
+    elif sort_key == "second":
+        order_by = f"updated_at {direction}, id {direction}"
     elif sort_key == "check":
         # Most serious first (descending): Critical counts, then Caution, then the due date.
         order_by = f"critical {direction}, caution {direction}, due_date ASC, name COLLATE NOCASE ASC, id"

@@ -11,6 +11,7 @@ import { api, ApiError } from '../lib/api'
 import { dayPhrase } from '../lib/dates'
 import { sentText, type AdDetail } from '../lib/detail'
 import { PRODUCT_LABEL, sourceLabel } from '../lib/labels'
+import { useMarkSeen } from '../lib/seen'
 import { useApi } from '../lib/useApi'
 import { DecisionBar, type Decision } from '../review/DecisionBar'
 import { DismissedCard, ReviewSuggestionCard, type SuggestionActions } from '../review/SuggestionCards'
@@ -38,6 +39,7 @@ export function ReviewPage() {
   const [reload, setReload] = useState(0)
   const [cleared, setCleared] = useState<number | null>(null)
   const { latest, error } = useApi<AdDetail>(`/api/ads/${adId}`, version * 1000 + reload)
+  useMarkSeen(latest ? latest.ad.id : null, latest?.ad.updated_at)
   const detail = latest && latest.ad.id === adId ? latest : null
 
   if (cleared === adId) return <QueueCleared />

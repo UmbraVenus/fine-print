@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { AdView } from '../ads/AdView'
 import { DownloadAd } from '../ads/DownloadAd'
 import { useWorkspace } from '../app/workspace'
+import { useMarkSeen } from '../lib/seen'
 import { useApi } from '../lib/useApi'
 import { dayLabel, dayPhrase } from '../lib/dates'
 import { activityText, sentText, type AdDetail } from '../lib/detail'
@@ -26,6 +27,7 @@ export function ViewDrawer() {
   const id = Number(params.get('view'))
   const open = Number.isFinite(id) && id > 0
   const { data: detail, error } = useApi<AdDetail>(open ? `/api/ads/${id}` : null, version)
+  useMarkSeen(detail ? detail.ad.id : null, detail?.ad.updated_at)
   const missing = Boolean(error)
 
   const close = () =>

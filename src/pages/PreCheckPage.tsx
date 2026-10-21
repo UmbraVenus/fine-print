@@ -30,6 +30,7 @@ import { dayPhrase } from '../lib/dates'
 import { sentText, type AdDetail, type Finding, type Version } from '../lib/detail'
 import { PRODUCT_LABEL } from '../lib/labels'
 import type { Layer } from '../lib/types'
+import { useMarkSeen } from '../lib/seen'
 import { useApi } from '../lib/useApi'
 
 const UNAVAILABLE = 'Auto check unavailable right now. You can still submit as usual.'
@@ -43,6 +44,7 @@ export function PreCheckPage() {
   const { version } = useWorkspace()
   const [reload, setReload] = useState(0)
   const { latest, error } = useApi<AdDetail>(`/api/ads/${adId}`, version * 1000 + reload)
+  useMarkSeen(latest ? latest.ad.id : null, latest?.ad.updated_at)
   const detail = latest && latest.ad.id === adId ? latest : null
 
   if (error instanceof ApiError && error.status === 404) {
