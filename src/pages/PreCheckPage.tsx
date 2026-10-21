@@ -1,5 +1,5 @@
 import { Alert, App as AntApp, Button, Input, Skeleton, Tooltip } from 'antd'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
@@ -27,7 +27,7 @@ import {
 } from '../findings/parts'
 import { api, ApiError } from '../lib/api'
 import { dayPhrase } from '../lib/dates'
-import { sentText, type AdDetail, type Version } from '../lib/detail'
+import { sentText, type AdDetail, type Finding, type Version } from '../lib/detail'
 import { PRODUCT_LABEL } from '../lib/labels'
 import type { Layer } from '../lib/types'
 import { useApi } from '../lib/useApi'
@@ -96,6 +96,7 @@ function PreCheckCard({
   onResolve,
   size,
   onMakeReadable,
+  headline,
 }: {
   item: Numbered
   selected: boolean
@@ -109,6 +110,8 @@ function PreCheckCard({
   /** Text too small to read can be made readable in one click; 'done' once it is. */
   size: 'none' | 'ready' | 'done'
   onMakeReadable: () => void
+  /** The reviewer's wording, when they kept or edited this suggestion. */
+  headline?: string
 }) {
   const { n, finding, rule } = item
   const [noteOpen, setNoteOpen] = useState(Boolean(finding.submitter_note))
@@ -145,7 +148,7 @@ function PreCheckCard({
               Resolved by you
             </span>
           )}
-          <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600, color: resolved ? '#4A5468' : undefined }}>{finding.text}</p>
+          <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600, color: resolved ? '#4A5468' : undefined }}>{headline ?? finding.text}</p>
           <RuleLine rule={rule} />
         </div>
         {finding.suggested_fix && !resolved && (
@@ -251,14 +254,20 @@ function PreCheckCard({
   )
 }
 
+/** What the reviewer sent back, once: their message, the suggestions they kept, and their own findings. */
 function FromReviewer({
   detail,
+  kept,
+  renderKept,
   pinnedIds,
   selected,
   onSelect,
   onEditOnAd,
 }: {
   detail: AdDetail
+  /** Auto suggestions the reviewer kept, as they are on the copy being edited. */
+  kept: Numbered[]
+  renderKept: (item: Numbered) => ReactNode
   /** Reviewer findings whose quoted words are pinned on the ad. */
   pinnedIds: Set<number>
   selected: number | null
@@ -266,16 +275,30 @@ function FromReviewer({
   onEditOnAd: (layerId: string) => void
 }) {
   const sent = detail.current.findings.filter((f) => f.sent_to_submitter)
+  const own = sent.filter((f) => f.origin === 'reviewer')
   const decision = detail.events.find((e) => e.type === 'decision')
   const note = typeof decision?.detail.message === 'string' ? decision.detail.message : null
-  if (!sent.length && !note) return null
+  // The message starts as a list of what was sent; show it only when the reviewer wrote more than that.
+  const listed = new Set(sent.map((f) => sentText(f).trim()))
+  const lines = (note ?? '').split('\n').map((l) => l.replace(/^\s*-\s*/, '').trim()).filter(Boolean)
+  const message = note && !lines.every((l) => listed.has(l)) ? note : null
+  if (!message && !kept.length && !own.length) return null
+  const count = kept.length + own.length
   return (
     <section className="fp-card fp-panel" aria-labelledby="from-reviewer">
-      <h2 id="from-reviewer" className="fp-panel-title">
-        From your reviewer
-      </h2>
-      {note && <NoteBox label="Message" text={note} />}
-      {sent.map((finding) => {
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 id="from-reviewer" className="fp-panel-title">
+          From your reviewer
+        </h2>
+        {count > 0 && (
+          <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#FFFFFF', background: '#0F766E', borderRadius: 9999, padding: '2px 9px' }}>
+            {count}
+          </span>
+        )}
+      </div>
+      {message && <NoteBox label="Message" text={message} />}
+      {kept.map((item) => renderKept(item))}
+      {own.map((finding) => {
         const pinned = pinnedIds.has(finding.id)
         const n = reviewerN(finding)
         return (
@@ -288,13 +311,8 @@ function FromReviewer({
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               {pinned && <ReviewerPin selected={selected === n} onSelect={() => onSelect(n)} />}
-              <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 500 }}>{sentText(finding)}</p>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 500 }}>{finding.text}</p>
             </div>
-            {finding.origin === 'auto' && finding.suggested_fix && (
-              <p style={{ margin: 0, fontSize: 14, lineHeight: '20px', color: '#4A5468' }}>
-                {finding.fix_label}: {finding.suggested_fix}
-              </p>
-            )}
             {pinned && finding.layer_id && (
               <div style={{ marginLeft: -8 }} onClick={(e) => e.stopPropagation()}>
                 <button type="button" className="fp-quiet fp-small-button fp-card-link" onClick={() => onEditOnAd(finding.layer_id!)}>
@@ -345,8 +363,17 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     ],
     [numbered, textTemplate, layerIds, fromReviewer],
   )
-  const unresolved = numbered.filter((x) => !x.finding.resolved_by_submitter)
-  const resolvedItems = numbered.filter((x) => x.finding.resolved_by_submitter)
+  // Suggestions the reviewer kept move up into "From your reviewer"; Auto suggestions keeps the rest.
+  const keptByReviewer = useMemo(() => {
+    if (ad.status !== 'changes_required') return new Map<string, Finding>()
+    const sent = sentFindings.filter((f) => f.origin === 'auto' && f.sent_to_submitter)
+    return new Map(sent.map((f) => [`${f.rule_id}|${f.layer_id ?? '-'}`, f]))
+  }, [ad.status, sentFindings])
+  const keptKey = (item: Numbered) => `${item.finding.rule_id}|${item.finding.layer_id ?? '-'}`
+  const kept = numbered.filter((x) => keptByReviewer.has(keptKey(x)))
+  const rest = numbered.filter((x) => !keptByReviewer.has(keptKey(x)))
+  const unresolved = rest.filter((x) => !x.finding.resolved_by_submitter)
+  const resolvedItems = rest.filter((x) => x.finding.resolved_by_submitter)
   const critical = unresolved.filter((x) => x.finding.severity === 'critical')
   const caution = unresolved.filter((x) => x.finding.severity === 'caution')
   const layerText = (layerId: string | null) => (layerId ? working.layers.find((l) => l.id === layerId)?.text : undefined)
@@ -527,7 +554,17 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
 
         <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
           {ad.status === 'changes_required' && (
-            <FromReviewer detail={detail} pinnedIds={pinnedIds} selected={selected} onSelect={selectFromCard} onEditOnAd={editOnAd} />
+            <FromReviewer
+              detail={detail}
+              kept={kept}
+              renderKept={(item) => (
+                <PreCheckCard key={item.finding.id} {...cardProps(item)} headline={sentText(keptByReviewer.get(keptKey(item))!)} />
+              )}
+              pinnedIds={pinnedIds}
+              selected={selected}
+              onSelect={selectFromCard}
+              onEditOnAd={editOnAd}
+            />
           )}
           <section className="fp-card fp-panel" aria-labelledby="auto-suggestions" aria-busy={checking}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

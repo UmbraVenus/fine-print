@@ -39,7 +39,10 @@ test('README tour', async ({ page }) => {
   await expect(page.locator('[data-layer="headline"]')).toContainText('from 7.99% to 29.99% APR with autopay')
   await expect(page.locator('.fp-edited-badge')).toBeVisible()
   await rate.getByRole('button', { name: 'Mark resolved' }).click()
-  await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
+  // The suggestion the reviewer kept sits in From your reviewer, once, and shows it's resolved there.
+  const fromReviewer = page.locator('section[aria-labelledby="from-reviewer"]')
+  await expect(fromReviewer.locator('article', { hasText: 'The rate claim is missing the full APR range' })).toContainText('Resolved by you')
+  await expect(page.locator('article', { hasText: 'The rate claim is missing the full APR range' })).toHaveCount(1)
   await page.getByRole('button', { name: 'Submit' }).click()
   await expect(page).toHaveURL(/\/my-ads$/)
 
