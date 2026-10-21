@@ -136,3 +136,14 @@ def test_a_too_small_disclosure_can_be_made_readable(db):
     open_rules = {f["rule_id"] for f in repo.ad_detail(db, 3)["current"]["findings"] if f["origin"] == "auto"}
     assert "clear-and-conspicuous" not in open_rules
     assert "rate-claims" in open_rules  # the words weren't touched
+
+
+def test_applying_a_suggestion_resolves_it_on_the_new_draft(db):
+    actions.decide(db, 3, "changes_required", "Fix the rate.", NOW)
+    layers = repo.ad_detail(db, 3)["current"]["layers"]
+    swapped = [{**l, "text": l["text"].replace("as low as 7.99% APR", "from 7.99% to 29.99% APR with autopay")}
+               if l["id"] == "headline" else l for l in layers]
+    draft = actions.save_copy(db, 3, swapped, NOW, resolve={"rule_id": "rate-claims", "layer_id": "headline"})
+    by_rule = {f["rule_id"]: f for f in draft["findings"] if f["origin"] == "auto"}
+    assert by_rule["rate-claims"]["resolved_by_submitter"] is True
+    assert by_rule["credit-score-claims"]["resolved_by_submitter"] is False

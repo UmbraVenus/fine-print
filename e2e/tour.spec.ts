@@ -38,7 +38,7 @@ test('README tour', async ({ page }) => {
   await rate.getByRole('button', { name: 'Swap the flagged words for this wording' }).click()
   await expect(page.locator('[data-layer="headline"]')).toContainText('from 7.99% to 29.99% APR with autopay')
   await expect(page.locator('.fp-edited-badge')).toBeVisible()
-  await rate.getByRole('button', { name: 'Mark resolved' }).click()
+  // Swapping resolves it; no second click.
   // The suggestion the reviewer kept sits in From your reviewer, once, and shows it's resolved there.
   const fromReviewer = page.locator('section[aria-labelledby="from-reviewer"]')
   await expect(fromReviewer.locator('article', { hasText: 'The rate claim is missing the full APR range' })).toContainText('Resolved by you')

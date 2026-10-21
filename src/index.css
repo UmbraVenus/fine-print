@@ -1084,3 +1084,30 @@ a.fp-pager:hover {
 .fp-coming-next li button:hover {
   color: #ffffff;
 }
+
+/* Resolve a suggestion like a comment: an outlined check in the card's corner, filled green once resolved. */
+.fp-resolve-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  border: 1.5px solid #8a93a6;
+  background: #ffffff;
+  color: #8a93a6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+.fp-resolve-check:hover {
+  border-color: #067647;
+  color: #067647;
+}
+.fp-resolve-check[data-on] {
+  background: #067647;
+  border-color: #067647;
+  color: #ffffff;
+}

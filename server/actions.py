@@ -250,12 +250,18 @@ def _validate_layers(version: dict, layers: list) -> list[dict]:
     return cleaned
 
 
-def save_copy(db: Db, ad_id: int, layers: list, now: datetime) -> dict:
+def save_copy(db: Db, ad_id: int, layers: list, now: datetime, resolve: dict | None = None) -> dict:
+    """Save the marketer's copy. `resolve` ({rule_id, layer_id}) marks the suggestion it applied as resolved."""
     ad = _ad(db, ad_id)
     if ad["status"] not in ("draft", "changes_required"):
         raise ActionError("Only drafts and ads that need changes can be edited", 409)
     version = _working_version(db, ad, create=True)
     db.update("ad_versions", version["id"], {"layers": _validate_layers(version, layers)})
+    if isinstance(resolve, dict) and resolve.get("rule_id"):
+        # Applying a suggestion resolves it: on the working version, which may have just been copied.
+        db.run("""UPDATE findings SET resolved_by_submitter = 1 WHERE ad_version_id = ? AND origin = 'auto'
+                  AND rule_id = ? AND COALESCE(layer_id, '') = COALESCE(?, '')""",
+               (version["id"], resolve["rule_id"], resolve.get("layer_id")))
     db.update("ads", ad_id, {"updated_at": iso(now)})
     db.commit()
     return repo.version_detail(db, db.one("SELECT * FROM ad_versions WHERE id = ?", (version["id"],)))

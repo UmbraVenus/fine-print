@@ -21,29 +21,29 @@ test('pre-check: swap the wording, copy it, edit on ad, mark resolved, a note, a
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('No annual fee. 21.24%–29.24% variable APR.')
   await page.screenshot({ path: 'screenshots/m5-pre-check.png', fullPage: true })
 
-  // 1. Swap puts the suggested words in place of the flagged ones, on the ad.
+  // 1. Swap puts the suggested words in place of the flagged ones, on the ad, and that resolves it.
   const first = page.locator('[data-finding="1"]')
   await first.getByRole('button', { name: 'Swap the flagged words for this wording' }).click()
-  await expect(page.getByText('Swapped in on the ad.', { exact: false })).toBeVisible()
+  await expect(page.getByText('Swapped in on the ad, and marked resolved.')).toBeVisible()
   await expect(page.locator('[data-layer="headline"]')).toContainText('21.24%–29.24% variable APR.')
-  await expect(first.getByRole('button', { name: 'Swapped' })).toBeDisabled()
   await expect(page.locator('[data-layer="headline"] .fp-edited-badge')).toHaveText('Edited')
+  await expect(first.getByRole('button', { name: 'Reopen' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
+  await expect(page.getByText('· 1 marked resolved')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Critical · 1/ })).toHaveCount(0)
+  await page.screenshot({ path: 'screenshots/final/03-pre-check-resolved.png', fullPage: true })
 
-  // 2. "Edit on ad" opens that text for editing.
+  // 2. The check in the corner reopens it: the wording shows as used, and Edit on ad opens that text.
+  await first.getByRole('button', { name: 'Reopen' }).click()
+  await expect(page.getByRole('button', { name: /Critical · 1/ })).toBeVisible()
+  await expect(first.getByRole('button', { name: 'Swapped' })).toBeDisabled()
   await first.getByRole('button', { name: 'Edit on ad' }).click()
   const editor = page.getByRole('textbox', { name: 'Edit text' })
   await expect(editor).toBeFocused()
   await editor.press('Escape')
 
-  // 3. The marketer marks it resolved by hand; it moves to its own group, and can be reopened.
+  // 3. Resolving by hand is the same check, for fixes a swap doesn't cover.
   await first.getByRole('button', { name: 'Mark resolved' }).click()
-  await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
-  await expect(page.getByText('· 1 marked resolved')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Critical · 1/ })).toHaveCount(0)
-  await page.screenshot({ path: 'screenshots/final/03-pre-check-resolved.png', fullPage: true })
-  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Reopen' }).click()
-  await expect(page.getByRole('button', { name: /Critical · 1/ })).toBeVisible()
-  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Mark resolved' }).click()
   await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
 
   const second = page.locator('[data-finding="2"]')
@@ -178,7 +178,7 @@ test('a disclosure too small to read is made readable in Pre-check, and What cha
   const card = page.locator('article', { hasText: 'The disclosure is too small to read' })
   await expect(card.getByText('Suggested size')).toBeVisible()
   await card.getByRole('button', { name: 'Swap in 11px' }).click()
-  await expect(card.getByRole('button', { name: 'Swapped', exact: true })).toBeDisabled()
+  await expect(card.getByRole('button', { name: 'Reopen' })).toHaveAttribute('aria-pressed', 'true')  // swapping resolves it
   const disclosure = page.locator('section[aria-label="Your ad"] [data-layer="disclosure"]')
   await expect(disclosure).toHaveCSS('font-size', '11px')
   await expect(disclosure.locator('.fp-edited-badge')).toBeVisible()

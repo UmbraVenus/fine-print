@@ -135,12 +135,30 @@ function PreCheckCard({
       id={`finding-${n}`}
       data-finding={n}
       data-resolved={resolved || undefined}
-      style={{ ...cardStyle(selected), ...(resolved ? { background: '#FBFCFD' } : {}) }}
+      style={{ ...cardStyle(selected), position: 'relative', ...(resolved ? { background: '#FBFCFD' } : {}) }}
       onClick={onSelect}
       aria-label={`Suggestion ${n}`}
     >
       <NumberBadge n={n} selected={selected} onSelect={onSelect} tone={resolved ? 'resolved' : 'default'} />
-      <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {editable && (
+        // Resolve like a comment: a check in the corner. Swap resolves on its own; this is for everything else.
+        <Tooltip title={resolved ? 'Resolved. Click to reopen.' : 'Mark resolved'}>
+          <button
+            type="button"
+            className="fp-resolve-check"
+            data-on={resolved || undefined}
+            aria-label={resolved ? 'Reopen' : 'Mark resolved'}
+            aria-pressed={resolved}
+            onClick={(e) => {
+              e.stopPropagation()
+              onResolve(!resolved)
+            }}
+          >
+            <Icon name="check" size={16} strokeWidth={2.6} />
+          </button>
+        </Tooltip>
+      )}
+      <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10, paddingRight: editable ? 28 : 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {resolved && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#067647' }}>
@@ -218,15 +236,6 @@ function PreCheckCard({
             )}
             <button type="button" className="fp-quiet fp-small-button fp-card-link" aria-expanded={noteOpen} onClick={() => setNoteOpen((o) => !o)}>
               Add a note
-            </button>
-            <button
-              type="button"
-              className={`fp-small-button ${resolved ? 'fp-secondary' : 'fp-resolve'}`}
-              style={{ marginLeft: 'auto' }}
-              aria-pressed={resolved}
-              onClick={() => onResolve(!resolved)}
-            >
-              {resolved ? 'Reopen' : 'Mark resolved'}
             </button>
           </div>
         )}
@@ -385,12 +394,14 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     )
   }, [working.layers, baseline])
 
-  const saveLayer = async (layerId: string, text: string, fontSize?: number) => {
+  /** Save the copy; `applied` is the suggestion this edit carries out, which then counts as resolved. */
+  const saveLayer = async (layerId: string, text: string, fontSize?: number, applied?: Numbered) => {
     const layers = working.layers.map((l) =>
       l.id === layerId ? { ...l, text, ...(fontSize ? { style: { ...l.style, fontSize } } : {}) } : l,
     )
+    const resolve = applied ? { rule_id: applied.finding.rule_id, layer_id: applied.finding.layer_id } : undefined
     try {
-      await api.put(`/api/ads/${ad.id}/copy`, { layers })
+      await api.put(`/api/ads/${ad.id}/copy`, { layers, resolve })
       reload()
     } catch (e) {
       message.error(e instanceof ApiError ? e.message : "Couldn't save your edit. Try again.")
@@ -401,8 +412,8 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     const { layer_id, quote, suggested_fix } = item.finding
     const text = layerText(layer_id)
     if (!layer_id || !quote || !suggested_fix || text === undefined || !text.includes(quote)) return
-    await saveLayer(layer_id, text.replace(quote, suggested_fix))
-    message.success('Swapped in on the ad. Mark it resolved once it reads right.')
+    await saveLayer(layer_id, text.replace(quote, suggested_fix), undefined, item)
+    message.success('Swapped in on the ad, and marked resolved.')
   }
 
   /** A suggestion about text too small to read can be fixed here: the size is part of the ad's data. */
@@ -418,8 +429,8 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const makeReadable = async (item: Numbered) => {
     const layer = working.layers.find((l) => l.id === item.finding.layer_id)
     if (!layer) return
-    await saveLayer(layer.id, layer.text, READABLE_SIZE)
-    message.success(`Swapped in ${READABLE_SIZE}px. Mark it resolved once it reads right.`)
+    await saveLayer(layer.id, layer.text, READABLE_SIZE, item)
+    message.success(`Swapped in ${READABLE_SIZE}px, and marked resolved.`)
   }
 
   const cardProps = (item: Numbered) => ({

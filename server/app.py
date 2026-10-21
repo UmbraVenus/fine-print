@@ -133,7 +133,8 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
 
     @app.put("/api/ads/<int:ad_id>/copy")
     def save_copy(ad_id: int):
-        return jsonify(actions.save_copy(get_db(), ad_id, body().get("layers"), now()))
+        data = body()
+        return jsonify(actions.save_copy(get_db(), ad_id, data.get("layers"), now(), resolve=data.get("resolve")))
 
     @app.post("/api/ads/<int:ad_id>/submit")
     def submit(ad_id: int):
