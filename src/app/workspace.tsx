@@ -42,11 +42,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [version])
 
-  // Another tab (Review and Pre-check open in new tabs) may change the data: refetch on focus.
+  // Another tab (Review and Pre-check open in new tabs) may change the data, or the role: coming back to
+  // this tab refetches, so a decided ad leaves the Queue and a submitted one shows Pending in My ads.
   useEffect(() => {
-    const onFocus = () => setVersion((v) => v + 1)
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    const onReturn = () => {
+      if (document.visibilityState === 'hidden') return
+      setRoleState(readRole())
+      setVersion((v) => v + 1)
+    }
+    window.addEventListener('focus', onReturn)
+    document.addEventListener('visibilitychange', onReturn)
+    return () => {
+      window.removeEventListener('focus', onReturn)
+      document.removeEventListener('visibilitychange', onReturn)
+    }
   }, [])
 
   const setRole = useCallback((next: Role) => {

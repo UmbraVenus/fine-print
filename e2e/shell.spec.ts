@@ -35,7 +35,7 @@ test('coming next starts collapsed and lists the roadmap', async ({ page }) => {
   const toggle = page.getByRole('button', { name: 'Coming next', exact: true })
   await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   await toggle.click()
-  await expect(page.locator('#coming-next-list li')).toHaveText([
+  await expect(page.locator('#coming-next-list .fp-coming-title')).toHaveText([
     'Turn compliance documents into rules',
     'Upload your own ads',
     'Search past decisions',
