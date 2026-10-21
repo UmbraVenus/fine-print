@@ -361,36 +361,47 @@ def insights(db: Db, now: datetime) -> dict:
 
     metrics = []
     base, latest = approved[0], approved[-1]
+    hero = None
+    if base:
+        times = latest / base
+        hero = {
+            "headline": f"{round(times) if times >= 3 else round(times, 1)}× more ads approved every week",
+            "lines": [f"{latest} approved this week, up from {base} before Fine Print.",
+                      "Same rules, a fraction of the back-and-forth."],
+        }
     metrics.append({
-        "key": "approved", "label": "Ads approved per week", "value": latest, "display": str(latest),
+        "key": "approved", "label": "More ads approved per week", "value": latest, "display": str(latest),
         "trend": _trend(_pct_change(latest, base), "up", "vs. before Fine Print"),
-        "note": f"{'More' if latest >= base else 'Fewer'} ads approved per week than before Fine Print ({base})",
+        "note": f"{'Up' if latest >= base else 'Down'} from {base} before Fine Print",
         "series": approved,
     })
     base_t, latest_t = turnaround[0], turnaround[-1]
     if latest_t is not None and base_t:
+        saved = round(base_t - latest_t)
         metrics.append({
-            "key": "turnaround", "label": "Submit to approval", "value": latest_t, "display": f"{latest_t}h",
+            "key": "turnaround", "label": "Time saved per ad", "value": latest_t,
+            "display": f"{saved}h faster" if saved > 0 else f"{latest_t}h",
             "trend": _trend(_pct_change(latest_t, base_t), "down", "vs. before Fine Print"),
-            "note": f"{'Faster' if latest_t <= base_t else 'Slower'} than before ({_duration(base_t)})",
+            "note": f"From {_duration(base_t)} to {latest_t} hours, submit to approval",
             "series": turnaround,
         })
     base_r, latest_r = rounds[0], rounds[-1]
-    if latest_r is not None and base_r:
+    if latest_r and base_r:
         metrics.append({
-            "key": "rounds", "label": "Rounds per ad", "value": latest_r, "display": f"{latest_r}",
-            "trend": _trend(_pct_change(latest_r, base_r), "down", "vs. before Fine Print"),
-            "note": f"{'Fewer' if latest_r <= base_r else 'More'} rounds than before (about {round(base_r)})",
+            # How many times fewer rounds an ad needs; the number already says the direction.
+            "key": "rounds", "label": "Review efficiency", "value": latest_r,
+            "display": f"{round(base_r / latest_r, 1)}×", "trend": None,
+            "note": f"Ads now clear in {latest_r} rounds, down from about {round(base_r)}",
             "series": rounds,
         })
     if first is not None and first_then is not None:
         change = first - first_then
-        note = ("Up from last month, thanks to pre-check" if change > 0
-                else "Down from last month" if change < 0 else "The same as last month")
+        movement = "up from" if change > 0 else "down from" if change < 0 else "the same as"
         metrics.append({
-            "key": "first_round", "label": "Approved in round 1", "value": first, "display": f"{first}%",
+            "key": "first_round", "label": "Right the first time", "value": first, "display": f"{first}%",
             "trend": _trend(change, "up", f"vs. {first_then}% last month", unit="pts"),
-            "note": note, "series": first_by_week,
+            "note": f"Approved in round 1, {movement} {first_then}% last month",
+            "series": first_by_week,
         })
 
     # What the auto check flags most, over the 8 weeks.
@@ -414,4 +425,4 @@ def insights(db: Db, now: datetime) -> dict:
         status = "good" if score >= 85 else "watch" if score >= 60 else "at_risk"
         affiliates.append({"source": p["source"], "score": score, "ads": p["n"], "status": status})
     affiliates.sort(key=lambda a: (a["score"], a["source"]))
-    return {"metrics": metrics, "issues": issues, "affiliates": affiliates}
+    return {"hero": hero, "metrics": metrics, "issues": issues, "affiliates": affiliates}

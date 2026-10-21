@@ -71,11 +71,18 @@ def test_insights_tell_the_same_story_as_history(db):
     assert metrics["turnaround"]["value"] == history["turnaround"]["value"] == metrics["turnaround"]["series"][-1]
     assert metrics["first_round"]["value"] == history["first_review"]["value"]
     assert metrics["first_round"]["trend"] == history["first_review"]["trend"]
-    assert metrics["approved"]["note"].endswith(f"({metrics['approved']['series'][0]})")
-    # The throughput story: more approved, faster, fewer rounds.
-    assert metrics["approved"]["trend"]["direction"] == "up"
-    assert metrics["turnaround"]["trend"]["direction"] == "down" and "working days" in metrics["turnaround"]["note"]
-    assert metrics["rounds"]["value"] < metrics["rounds"]["series"][0]
+    base, latest = metrics["approved"]["series"][0], metrics["approved"]["series"][-1]
+    assert metrics["approved"]["note"] == f"Up from {base} before Fine Print"
+    # The headline is the same numbers, multiplied out.
+    assert insights["hero"]["headline"] == f"{round(latest / base)}× more ads approved every week"
+    assert insights["hero"]["lines"][0] == f"{latest} approved this week, up from {base} before Fine Print."
+    # Time saved is the difference between before and now; efficiency is the ratio of rounds.
+    t = metrics["turnaround"]["series"]
+    assert metrics["turnaround"]["display"] == f"{round(t[0] - t[-1])}h faster" and "working days" in metrics["turnaround"]["note"]
+    r = metrics["rounds"]["series"]
+    assert metrics["rounds"]["display"] == f"{round(r[0] / r[-1], 1)}×" and r[-1] < r[0]
+    assert [m["label"] for m in insights["metrics"]] == [
+        "More ads approved per week", "Time saved per ad", "Review efficiency", "Right the first time"]
     assert len(metrics["approved"]["series"]) == 9
     # Top issues: the most flagged rules, biggest first, as shares of all findings.
     shares = [i["share"] for i in insights["issues"]]

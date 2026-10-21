@@ -1000,3 +1000,22 @@ a.fp-pager:hover {
 .fp-stat-card:hover {
   border-color: var(--fp-primary) !important;
 }
+
+.fp-hero-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 10px;
+  background: var(--fp-primary);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.fp-hero-button:hover {
+  background: #115e59;
+  color: #ffffff;
+}

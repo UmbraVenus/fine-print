@@ -7,10 +7,11 @@ test.use({ viewport: { width: 1280, height: 1000 } })
 test('README tour', async ({ page }) => {
   await resetData(page)
 
-  // 1. Open Queue.
+  // 1. Land on Insights, then open the Queue.
   await setRole(page, 'reviewer')
   await page.goto('/')
-  await expect(page).toHaveURL(/\/queue$/)
+  await expect(page).toHaveURL(/\/insights$/)
+  await page.getByRole('link', { name: 'Open the Queue · 9' }).click()
   await expect(page.locator('[data-stat="waiting"] [data-stat-value]')).toHaveText('9')
 
   // 2. Review Fall personal loan.

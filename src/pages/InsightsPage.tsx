@@ -1,5 +1,7 @@
 import { Skeleton } from 'antd'
 import { Link } from 'react-router-dom'
+import { useWorkspace } from '../app/workspace'
+import { Icon } from '../components/Icon'
 import { TrendBadge } from '../components/StatCards'
 import { SeverityTag } from '../components/StatusTag'
 import type { Trend } from '../lib/types'
@@ -16,6 +18,7 @@ interface Metric {
 }
 
 interface Insights {
+  hero: { headline: string; lines: string[] } | null
   metrics: Metric[]
   issues: Array<{ rule_id: string; name: string; share: number }>
   affiliates: Array<{ source: string; score: number; ads: number; status: 'good' | 'watch' | 'at_risk' }>
@@ -56,7 +59,7 @@ function MetricCard({ metric }: { metric: Metric }) {
     <section className="fp-card" aria-label={metric.label} style={{ padding: '24px 22px 22px', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
       <h2 style={{ margin: 0, fontSize: 13, lineHeight: '18px', fontWeight: 600, color: '#4A5468' }}>{metric.label}</h2>
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <span data-insight={metric.key} style={{ fontSize: 32, lineHeight: '40px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+        <span data-insight={metric.key} style={{ fontSize: 40, lineHeight: '48px', fontWeight: 800, letterSpacing: '-0.02em' }}>
           {metric.display}
         </span>
         {metric.trend && <TrendBadge trend={metric.trend} />}
@@ -69,8 +72,44 @@ function MetricCard({ metric }: { metric: Metric }) {
   )
 }
 
+/** The headline: the throughput story in one line, and the way into today's work. */
+function Hero({ hero, pending }: { hero: NonNullable<Insights['hero']>; pending: number | null }) {
+  return (
+    <section
+      aria-labelledby="insights-hero"
+      style={{
+        background: '#E6F4F1',
+        borderLeft: '4px solid #0F766E',
+        borderRadius: 12,
+        padding: '28px 32px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        gap: 24,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, flex: '1 1 420px' }}>
+        <h2 id="insights-hero" style={{ margin: 0, fontSize: 44, lineHeight: '52px', fontWeight: 800, letterSpacing: '-0.025em' }}>
+          {hero.headline}
+        </h2>
+        {hero.lines.map((line) => (
+          <p key={line} style={{ margin: 0, fontSize: 17, lineHeight: '26px', color: '#15213B' }}>
+            {line}
+          </p>
+        ))}
+      </div>
+      <Link to="/queue" className="fp-hero-button">
+        Open the Queue{pending !== null ? ` · ${pending}` : ''}
+        <Icon name="arrowRight" size={18} strokeWidth={2.2} />
+      </Link>
+    </section>
+  )
+}
+
 export function InsightsPage() {
   const { data, error } = useApi<Insights>('/api/insights')
+  const { pending } = useWorkspace()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -85,6 +124,7 @@ export function InsightsPage() {
         <Skeleton active paragraph={{ rows: 8 }} />
       ) : (
         <>
+          {data.hero && <Hero hero={data.hero} pending={pending} />}
           <div className="fp-insight-metrics">
             {data.metrics.map((metric) => (
               <MetricCard key={metric.key} metric={metric} />
