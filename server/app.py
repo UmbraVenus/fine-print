@@ -77,6 +77,7 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
             sort=args.get("sort"),
             order=args.get("order"),
             page=args.get("page", 1, type=int),
+            due_by=local_date(now()).isoformat() if args.get("due") == "today" else None,
             page_size=min(args.get("page_size", 10, type=int), 50),
         )
         result["stats"] = repo.stats(db, view, now())

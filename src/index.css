@@ -992,3 +992,11 @@ a.fp-pager:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.fp-stat-card {
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.fp-stat-card:hover {
+  border-color: var(--fp-primary) !important;
+}

@@ -10,7 +10,7 @@ import { dayLabel, dayPhrase, daysBetween, shortDate, workspaceDate } from '../l
 import { PRODUCT_LABEL, STATUS_LABEL, plural, sourceLabel } from '../lib/labels'
 import type { AdList, AdRow, AdStatus, Stat } from '../lib/types'
 import { Icon } from './Icon'
-import { StatCards } from './StatCards'
+import { StatCards, type StatAction } from './StatCards'
 import { AutoCheckTag, StatusTag } from './StatusTag'
 
 export type TableView = 'my-ads' | 'queue' | 'history'
@@ -39,13 +39,15 @@ const FORMAT_ORDER = ['Email', 'Facebook ad', 'Instagram ad', 'Instagram post', 
 
 const STATUS_ORDER: AdStatus[] = ['draft', 'pending', 'changes_required', 'approved_with_changes', 'approved', 'rejected']
 
-interface Filters {
+export interface Filters {
   format: string[]
   product: string[]
   status: string[]
+  /** ['today'] for the Queue's "due today" card. */
+  due: string[]
 }
 
-const NO_FILTERS: Filters = { format: [], product: [], status: [] }
+export const NO_FILTERS: Filters = { format: [], product: [], status: [], due: [] }
 
 function myAdsSubLine(row: AdRow, today: string): string {
   switch (row.status) {
@@ -244,15 +246,28 @@ function Footer({
   )
 }
 
-export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: Stat[]) => void }) {
+export function AdTable({
+  view,
+  onStats,
+  filters,
+  onFilters,
+  page,
+  onPage,
+}: {
+  view: TableView
+  onStats?: (stats: Stat[]) => void
+  /** Kept by the page, so its stat cards can set them too. */
+  filters: Filters
+  onFilters: (filters: Filters) => void
+  page: number
+  onPage: (page: number) => void
+}) {
   const config = VIEWS[view]
   const { today, version } = useWorkspace()
   const [, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [q, setQ] = useState('')
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
-  const [sort, setSort] = useState<{ key: 'name' | 'date'; order: 'asc' | 'desc' }>({ key: 'date', order: config.defaultOrder })
-  const [page, setPage] = useState(1)
+  const [sort, setSort] = useState<{ key: 'name' | 'date' | 'check'; order: 'asc' | 'desc' }>({ key: 'date', order: config.defaultOrder })
   const [pageSize, setPageSize] = useState(10)
   const params = query({
     view,
@@ -260,6 +275,7 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
     format: filters.format,
     product: filters.product,
     [config.statusKey]: filters.status,
+    due: filters.due,
     sort: sort.key,
     order: sort.order,
     page,
@@ -270,10 +286,10 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setQ(search)
-      setPage(1)
+      onPage(1)
     }, 250)
     return () => window.clearTimeout(timer)
-  }, [search])
+  }, [search]) // eslint-disable-line react-hooks/exhaustive-deps -- onPage is stable enough; only typing should restart this
 
   useEffect(() => {
     if (data) onStats?.(data.stats)
@@ -357,6 +373,19 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
     },
     {
       ...filterColumn('status', config.statusTitle, statusOptions),
+      // The Queue can also sort by the auto check: most serious first.
+      ...(view === 'queue'
+        ? {
+            sorter: true,
+            sortOrder: sort.key === 'check' ? (sort.order === 'asc' ? 'ascend' : 'descend') : null,
+            sortDirections: ['descend', 'ascend', 'descend'] as Array<'ascend' | 'descend'>,
+            sortIcon: ({ sortOrder }: { sortOrder: 'ascend' | 'descend' | null | undefined }) => <SortIcon sortOrder={sortOrder} />,
+            showSorterTooltip: false,
+            onHeaderCell: () => ({
+              className: [filters.status.length ? 'fp-th-active' : '', sort.key === 'check' ? 'fp-th-sorted' : ''].join(' ').trim() || undefined,
+            }),
+          }
+        : {}),
       width: 192,
       render: (_, row) =>
         view === 'queue' ? <AutoCheckTag critical={row.critical} caution={row.caution} /> : <StatusTag status={row.status} />,
@@ -406,23 +435,21 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
       format: (tableFilters.format as string[] | null) ?? [],
       product: (tableFilters.product as string[] | null) ?? [],
       status: (tableFilters.status as string[] | null) ?? [],
+      due: filters.due,
     }
-    if (JSON.stringify(next) !== JSON.stringify(filters)) {
-      setFilters(next)
-      setPage(1)
-    }
+    if (JSON.stringify(next) !== JSON.stringify(filters)) onFilters(next)
     const s = sorter as SorterResult<AdRow>
-    if (s.columnKey === 'name' || s.columnKey === 'date') {
-      const key = s.columnKey
+    if (s.columnKey === 'name' || s.columnKey === 'date' || s.columnKey === 'status') {
+      const key = s.columnKey === 'status' ? 'check' : s.columnKey
       const order = s.order === 'ascend' ? 'asc' : s.order === 'descend' ? 'desc' : null
       if (order && (key !== sort.key || order !== sort.order)) {
         setSort({ key, order })
-        setPage(1)
+        onPage(1)
       }
     }
   }
 
-  const filtered = Boolean(q.trim()) || filters.format.length + filters.product.length + filters.status.length > 0
+  const filtered = Boolean(q.trim()) || Object.values(filters).some((values) => values.length > 0)
   let empty: ReactNode = config.empty
   if (error && !data) empty = "Couldn't load ads. Refresh the page to try again."
   else if (filtered) empty = 'No ads match your search.'
@@ -457,10 +484,10 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
           page={page}
           pageSize={pageSize}
           total={data.total}
-          onPage={setPage}
+          onPage={onPage}
           onPageSize={(size) => {
             setPageSize(size)
-            setPage(1)
+            onPage(1)
           }}
         />
       )}
@@ -468,13 +495,47 @@ export function AdTable({ view, onStats }: { view: TableView; onStats?: (stats: 
   )
 }
 
+/** What clicking a stat card does: show just those rows, or open another page. */
+const STAT_ACTIONS: Record<TableView, Record<string, Partial<Filters> | { to: string }>> = {
+  'my-ads': {
+    attention: { status: ['draft', 'changes_required'] },
+    in_review: { status: ['pending'] },
+    approved: { status: ['approved', 'approved_with_changes'] },
+  },
+  queue: {
+    waiting: {},
+    due_today: { due: ['today'] },
+    reviewed: { to: '/history' },
+  },
+  history: {},
+}
+
 export function TablePage({ title, view }: { title: string; view: TableView }) {
   const [stats, setStats] = useState<Stat[] | null>(null)
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+  const [page, setPage] = useState(1)
+  const applyFilters = (next: Filters) => {
+    setFilters(next)
+    setPage(1)
+  }
+
+  const actions: Record<string, StatAction> = {}
+  for (const [key, action] of Object.entries(STAT_ACTIONS[view])) {
+    if ('to' in action) {
+      actions[key] = { to: action.to as string }
+      continue
+    }
+    const preset = { ...NO_FILTERS, ...action }
+    // A card is on while the table shows exactly its rows; "waiting" is everything, so it never stays on.
+    const active = Object.keys(action).length > 0 && JSON.stringify(preset) === JSON.stringify(filters)
+    actions[key] = { active, onClick: () => applyFilters(active ? NO_FILTERS : preset) }
+  }
+
   return (
     <>
       <h1 className="fp-page-title">{title}</h1>
-      {stats ? <StatCards stats={stats} /> : <div style={{ height: 84 }} aria-hidden="true" />}
-      <AdTable view={view} onStats={setStats} />
+      {stats ? <StatCards stats={stats} actions={actions} /> : <div style={{ height: 84 }} aria-hidden="true" />}
+      <AdTable view={view} onStats={setStats} filters={filters} onFilters={applyFilters} page={page} onPage={setPage} />
     </>
   )
 }

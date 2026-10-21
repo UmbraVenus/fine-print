@@ -44,7 +44,7 @@ def _decode_row(row: dict) -> dict:
 
 def list_ads(db: Db, view: str, *, q: str = "", formats: list[str] | None = None, products: list[str] | None = None,
              statuses: list[str] | None = None, auto_check: list[str] | None = None, sort: str | None = None,
-             order: str | None = None, page: int = 1, page_size: int = 10) -> dict:
+             order: str | None = None, page: int = 1, page_size: int = 10, due_by: str | None = None) -> dict:
     if view not in VIEWS:
         raise ValueError(f"Unknown view {view}")
     where = [VIEW_WHERE[view]]
@@ -57,6 +57,10 @@ def list_ads(db: Db, view: str, *, q: str = "", formats: list[str] | None = None
         if values:
             where.append(f"{column} IN ({', '.join('?' for _ in values)})")
             params += values
+    if due_by:
+        # "Due today" counts anything due by today, as the Queue's stat card does.
+        where.append("a.due_date <= ?")
+        params.append(due_by)
     outer = ""
     if auto_check:
         clauses = [AUTO_CHECK_FILTER[k] for k in auto_check if k in AUTO_CHECK_FILTER]
@@ -64,12 +68,15 @@ def list_ads(db: Db, view: str, *, q: str = "", formats: list[str] | None = None
             outer = " WHERE " + " OR ".join(f"({c})" for c in clauses)
 
     sort_key, sort_order = DEFAULT_SORT[view]
-    if sort in ("name", "date"):
+    if sort in ("name", "date") or (sort == "check" and view == "queue"):
         sort_key = sort
         sort_order = "asc" if order == "asc" else "desc"
     direction = "ASC" if sort_order == "asc" else "DESC"
     if sort_key == "name":
         order_by = f"name COLLATE NOCASE {direction}, id"
+    elif sort_key == "check":
+        # Most serious first (descending): Critical counts, then Caution, then the due date.
+        order_by = f"critical {direction}, caution {direction}, due_date ASC, name COLLATE NOCASE ASC, id"
     elif view == "queue":
         # Due date, then name, so "3 of 9" is stable for everyone.
         order_by = f"due_date {direction}, name COLLATE NOCASE ASC, id"

@@ -87,3 +87,25 @@ def test_insights_tell_the_same_story_as_history(db):
     for a in affiliates:
         assert a["status"] == ("good" if a["score"] >= 85 else "watch" if a["score"] >= 60 else "at_risk")
     assert affiliates[0]["source"] == "TotallyLegitLoans.biz" and affiliates[0]["status"] == "at_risk"
+
+
+def test_stat_card_filters_match_their_numbers(db):
+    from server.dates import local_date
+
+    queue = by_key(repo.stats(db, "queue", NOW))
+    due = repo.list_ads(db, "queue", due_by=local_date(NOW).isoformat())
+    assert due["total"] == queue["due_today"]["value"] == 4
+    mine = by_key(repo.stats(db, "my-ads", NOW))
+    assert repo.list_ads(db, "my-ads", statuses=["draft", "changes_required"])["total"] == mine["attention"]["value"]
+    assert repo.list_ads(db, "my-ads", statuses=["pending"])["total"] == mine["in_review"]["value"]
+    assert repo.list_ads(db, "my-ads", statuses=["approved", "approved_with_changes"])["total"] == mine["approved"]["value"]
+
+
+def test_queue_sorts_by_auto_check_severity(db):
+    rows = repo.list_ads(db, "queue", sort="check", order="desc")["rows"]
+    keys = [(r["critical"], r["caution"]) for r in rows]
+    assert keys == sorted(keys, reverse=True)
+    assert rows[0]["name"] == "Best loans of 2026"  # 3 Critical
+    assert rows[-1]["critical"] == 0 and rows[-1]["caution"] == 0  # Good standing last
+    up = repo.list_ads(db, "queue", sort="check", order="asc")["rows"]
+    assert (up[0]["critical"], up[0]["caution"]) == (0, 0)
