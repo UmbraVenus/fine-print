@@ -6,6 +6,7 @@ the model. Any failure returns an error status and changes nothing, so nothing i
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ from datetime import datetime
 from typing import Any
 
 from .dates import iso
+from . import limits
 from .db import Db
 from .quotes import locate_quote
 from .seed_data import rule_applies
@@ -199,8 +201,15 @@ def _applicable_rules(db: Db, ad: dict) -> list[dict]:
     return [r for r in rows if rule_applies(r, ad["product"], ad["source"])]
 
 
+def _fingerprint(layers: list[dict], rules: list[dict], model: str) -> str:
+    """What a live check's answer depends on: the copy, the rules that apply, and the model."""
+    parts = [model, *(f"{l['id']}={l['text']}" for l in layers),
+             *(f"{r['id']}:{r['severity']}:{r['description']}" for r in rules)]
+    return hashlib.sha256("\n".join(parts).encode()).hexdigest()
+
+
 def run_check(db: Db, version_id: int, now: datetime, context: str = "re-check", log_event: bool = True,
-              client: Any = None) -> dict:
+              client: Any = None, visitor: str | None = None) -> dict:
     """Check one version live and store the result. Returns {"status": "ok" | "unavailable" | "error"}."""
     version = db.one("SELECT * FROM ad_versions WHERE id = ?", (version_id,))
     if not version:
@@ -210,6 +219,16 @@ def run_check(db: Db, version_id: int, now: datetime, context: str = "re-check",
     ad = db.one("SELECT * FROM ads WHERE id = ?", (version["ad_id"],))
     rules = _applicable_rules(db, ad)
     layers = json.loads(version["layers"])
+
+    # Nothing changed since the last live check: its answer still stands, and costs nothing.
+    fingerprint = _fingerprint(layers, rules, model_name())
+    last = db.one("SELECT kind FROM check_runs WHERE ad_version_id = ? ORDER BY id DESC LIMIT 1", (version_id,))
+    checked = db.one("SELECT value FROM meta WHERE key = ?", (f"check:{version_id}",))
+    if last and last["kind"] == "live" and checked and checked["value"] == fingerprint:
+        return {"status": "ok", "reused": True}
+    if not limits.allow_live_check(db, visitor, now):
+        log.warning("Live check limit reached for version %s", version_id)
+        return {"status": "unavailable"}
     try:
         data = call_model(client or make_client(), build_request(ad, rules, layers, model_name()))
         findings, passed = validate(data, rules, layers)
@@ -218,6 +237,8 @@ def run_check(db: Db, version_id: int, now: datetime, context: str = "re-check",
         return {"status": "error"}
 
     _store(db, version, findings, passed, len(rules), now)
+    db.run("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+           (f"check:{version_id}", fingerprint))
     if log_event:
         severities = [f["severity"] for f in findings]
         db.insert("events", {

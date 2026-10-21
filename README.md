@@ -52,6 +52,7 @@ The frontend is a static Vite build. The API is one Python serverless function (
    | `ANTHROPIC_API_KEY` | Your Anthropic API key. Without it the app still works, but Re-check shows "Auto check unavailable right now". |
    | `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5-5` |
    | `WORKSPACE_TZ` | Optional. Defaults to `America/Los_Angeles` (what "Today" means) |
+   | `LIVE_CHECKS_PER_MINUTE`, `LIVE_CHECKS_PER_DAY` | Optional caps on live checks: per visitor per minute (default 10) and in total per day (default 200). Over a cap, Re-check shows "Auto check unavailable right now". A Re-check on unchanged copy reuses the last result and doesn't count. |
    | `ACCESS_KEY` | A long random value, for example from `openssl rand -hex 16`. The site then opens only from the secret link below. Leave it out to keep the site open. |
 
 4. **Deploy.** Then open the site and press **Reset sample data** once. The first request creates the tables and seeds the workspace, in about 190 batched statements.

@@ -180,3 +180,37 @@ def test_resolved_mark_survives_a_live_recheck(db):
                            "text": "Needs the APR.", "suggested_fix": "No annual fee. 21.24%–29.24% variable APR."}], "passed_rule_ids": []}
     checker.run_check(db, vid, NOW, client=FakeClient(reply=reply))
     assert repo.ad_detail(db, 1)["current"]["findings"][0]["resolved_by_submitter"] is True
+
+
+def test_unchanged_copy_reuses_the_last_live_check(db):
+    from server import actions
+
+    reply = {"findings": [], "passed_rule_ids": []}
+    client = FakeClient(reply=reply)
+    vid = version_id(db, 1)
+    assert checker.run_check(db, vid, NOW, client=client)["status"] == "ok"
+    assert checker.run_check(db, vid, NOW, client=client) == {"status": "ok", "reused": True}
+    assert len(client.messages.requests) == 1
+    # New copy, or a new rule, means a real check again.
+    layers = repo.ad_detail(db, 1)["current"]["layers"]
+    actions.save_copy(db, 1, [{**l, "text": l["text"] + " Terms apply."} if l["id"] == "body" else l for l in layers], NOW)
+    assert checker.run_check(db, vid, NOW, client=client).get("reused") is None
+    actions.add_rule(db, {"name": "Card fees", "category": "Claims", "severity": "caution",
+                          "description": "Show the card's fees.", "applies_to": ["credit_card"],
+                          "dont_example": "No fees", "do_example": "See rates and fees"}, NOW)
+    assert checker.run_check(db, vid, NOW, client=client).get("reused") is None
+    assert len(client.messages.requests) == 3
+
+
+def test_live_checks_are_capped(db, monkeypatch):
+    monkeypatch.setenv("LIVE_CHECKS_PER_MINUTE", "2")
+    monkeypatch.setenv("LIVE_CHECKS_PER_DAY", "3")
+    client = FakeClient(reply={"findings": [], "passed_rule_ids": []})
+    statuses = []
+    for ad_id in (3, 4, 5):
+        statuses.append(checker.run_check(db, version_id(db, ad_id), NOW, client=client, visitor="1.2.3.4")["status"])
+    assert statuses == ["ok", "ok", "unavailable"]  # third in the same minute from one visitor
+    assert checker.run_check(db, version_id(db, 6), NOW, client=client, visitor="5.6.7.8")["status"] == "ok"
+    # The day's total is used up for everyone.
+    assert checker.run_check(db, version_id(db, 7), NOW, client=client, visitor="9.9.9.9")["status"] == "unavailable"
+    assert len(client.messages.requests) == 3

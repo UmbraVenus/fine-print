@@ -152,7 +152,9 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
             return jsonify(error="adVersionId must be a number"), 400
         db = get_db()
         version_id = actions.checkable_version(db, version_id)
-        result = checker.run_check(db, version_id, now(), context=data.get("context", "re-check"))
+        # The visitor, for the per-minute cap: the first address Vercel's proxy saw.
+        visitor = (request.headers.get("X-Forwarded-For") or request.remote_addr or "").split(",")[0].strip() or None
+        result = checker.run_check(db, version_id, now(), context=data.get("context", "re-check"), visitor=visitor)
         return jsonify(result)
 
     @app.get("/api/nav")
