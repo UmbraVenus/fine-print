@@ -12,6 +12,8 @@ test('coming-next features take a vote, once per browser, where they would live 
   const before = Number((await card.getByText(/wants? this$/).innerText()).match(/\d+/)![0])
   await card.getByRole('button', { name: 'I’d use this' }).click()
   await expect(card.getByText('Thanks, noted')).toBeVisible()
+  // A check on the button, and on the same item in the sidebar, says you voted without opening it.
+  await expect(page.getByRole('button', { name: /^Upload your own ads/ }).locator('[data-voted="upload"]')).toBeVisible()
   await expect(card.getByText(/wants? this$/)).toHaveText(before + 1 === 1 ? '1 person wants this' : `${before + 1} people want this`)
 
   // The same browser can't vote twice: after a reload it's still noted, from the server.
@@ -23,6 +25,8 @@ test('coming-next features take a vote, once per browser, where they would live 
 
   // The sidebar's roadmap opens the same card, and Rules and History have their own.
   await page.getByRole('button', { name: 'Coming next', exact: true }).click()
+  await expect(page.locator('#coming-next-list [data-voted="upload"]')).toBeVisible()
+  await expect(page.locator('#coming-next-list [data-voted]')).toHaveCount(1)
   await page.locator('#coming-next-list').getByRole('button', { name: 'Search past decisions' }).click()
   await expect(page.locator('.ant-popover').getByText('Find how similar ads were decided before', { exact: false })).toBeVisible()
   await page.goto('/rules')

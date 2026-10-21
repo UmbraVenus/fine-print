@@ -1,7 +1,6 @@
 import { Popover } from 'antd'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { api } from '../lib/api'
-import { useApi } from '../lib/useApi'
 import { Icon } from './Icon'
 
 export type ComingFeature = 'doc-rules' | 'upload' | 'search'
@@ -30,6 +29,49 @@ interface VoteState {
   voted: ComingFeature[]
 }
 
+// One copy of the votes for every card, button and sidebar item, so a vote shows everywhere at once.
+let votesState: VoteState | null = null
+let votesLoading = false
+const listeners = new Set<() => void>()
+
+function setVotes(next: VoteState) {
+  votesState = next
+  listeners.forEach((listener) => listener())
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+
+function useVotes(): VoteState | null {
+  const state = useSyncExternalStore(subscribe, () => votesState)
+  useEffect(() => {
+    if (votesState || votesLoading) return
+    votesLoading = true
+    api
+      .get<VoteState>('/api/votes')
+      .then(setVotes)
+      .catch(() => undefined)
+      .finally(() => {
+        votesLoading = false
+      })
+  }, [])
+  return state
+}
+
+/** A green check on an item you've voted for, so you can tell without opening it. */
+export function VotedCheck({ feature, color = '#067647' }: { feature: ComingFeature; color?: string }) {
+  const votes = useVotes()
+  if (!votes?.voted.includes(feature)) return null
+  return (
+    <span data-voted={feature} style={{ display: 'inline-flex', color }}>
+      <Icon name="check" size={14} strokeWidth={2.6} />
+      <span className="fp-visually-hidden">, you voted for this</span>
+    </span>
+  )
+}
+
 function people(n: number): string {
   return n === 1 ? '1 person wants this' : `${n} people want this`
 }
@@ -37,11 +79,9 @@ function people(n: number): string {
 /** What a coming-next feature would do, and a vote for it. Opened from the sidebar or where it would live. */
 function VoteCard({ feature }: { feature: ComingFeature }) {
   const item = COMING_NEXT.find((f) => f.id === feature)!
-  const { data } = useApi<VoteState>('/api/votes')
-  const [mine, setMine] = useState<VoteState | null>(null)
+  const state = useVotes()
   const [saving, setSaving] = useState(false)
   // The server knows this browser's votes (by an anonymous cookie), so a vote counts once.
-  const state = mine ?? data
   const voted = Boolean(state?.voted.includes(feature))
   const votes = state ? state.votes[feature] : null
 
@@ -50,7 +90,7 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
     setSaving(true)
     setFailed(false)
     try {
-      setMine(await api.post<VoteState>('/api/votes', { feature }))
+      setVotes(await api.post<VoteState>('/api/votes', { feature }))
     } catch {
       setFailed(true)
     } finally {
@@ -108,6 +148,7 @@ export function ComingNextButton({ feature }: { feature: ComingFeature }) {
     <ComingNextPopover feature={feature}>
       <button type="button" className="fp-coming-door" aria-haspopup="dialog">
         {item.title}
+        <VotedCheck feature={feature} />
         <span className="fp-coming-tag">Coming next</span>
       </button>
     </ComingNextPopover>
