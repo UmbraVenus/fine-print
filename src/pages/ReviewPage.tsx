@@ -274,7 +274,18 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
-        <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        {/* The ad stays in view while the findings scroll, as in Pre-check, clear of the decision bar. */}
+        <div
+          style={{
+            flex: '1 1 420px',
+            minWidth: 0,
+            position: 'sticky',
+            top: 24,
+            maxHeight: pending ? 'calc(100vh - 136px)' : 'calc(100vh - 48px)',
+            overflowY: 'auto',
+            borderRadius: 12,
+          }}
+        >
           {comparison ? (
             <CompareVersions comparison={comparison} markers={markers} selected={selected} onSelect={selectFromAd} />
           ) : (
@@ -282,6 +293,9 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
               <AdView content={current} markers={markers} selected={selected} onSelect={selectFromAd} />
             </section>
           )}
+        </div>
+        {/* Your findings first, like "From your reviewer" on the marketer's side, then the auto check. */}
+        <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
           <YourFindings
             findings={reviewerFindings}
             readOnly={readOnly}
@@ -292,8 +306,8 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
             selected={selected}
             onSelect={selectFromCard}
           />
+          {groups}
         </div>
-        <div style={{ flex: '1 1 420px', minWidth: 0 }}>{groups}</div>
       </div>
 
       {pending && (

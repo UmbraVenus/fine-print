@@ -54,7 +54,7 @@ test('keyboard: tab through Review, keep a suggestion, open a pin', async ({ pag
   }
   const names = visited.map((v) => v.split('|')[0])
   // The reviewer reaches the pins, the cards' actions and every decision by keyboard alone.
-  for (const expected of ['Finding 1: The rate claim is missing the full APR range and the autopay condition.', 'Keep', 'Dismiss…', 'Add finding', 'Approve']) {
+  for (const expected of ['Finding 1: The rate claim is missing the full APR range and the autopay condition.', 'Keep', 'Dismiss…', 'Add a finding', 'Approve']) {
     expect(names.some((n) => n.startsWith(expected))).toBe(true)
   }
   // Every focused element shows the visible focus ring.

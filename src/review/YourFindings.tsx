@@ -127,6 +127,7 @@ export function YourFindings({
   onSelect: (n: number) => void
 }) {
   const [text, setText] = useState('')
+  const [writing, setWriting] = useState(false)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState(false)
 
@@ -140,6 +141,7 @@ export function YourFindings({
       await onAdd(text.trim())
       setText('')
       setError(false)
+      setWriting(false)
     } finally {
       setAdding(false)
     }
@@ -183,11 +185,19 @@ export function YourFindings({
           onSelect={() => onSelect(reviewerN(finding))}
         />
       ))}
-      {!readOnly && (
+      {!readOnly && !writing && (
+        <div>
+          <Button icon={<Icon name="plus" size={16} strokeWidth={2.4} />} onClick={() => setWriting(true)} style={{ minHeight: 40, padding: '0 16px' }}>
+            Add a finding
+          </Button>
+        </div>
+      )}
+      {!readOnly && writing && (
         <>
           <label style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, fontWeight: 600, color: '#4A5468' }}>
             Add a finding
             <Input.TextArea
+              autoFocus
               rows={4}
               value={text}
               status={error ? 'error' : undefined}
@@ -205,7 +215,16 @@ export function YourFindings({
               Write what needs to change first.
             </span>
           )}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <Button
+              onClick={() => {
+                setWriting(false)
+                setError(false)
+              }}
+              style={{ minHeight: 40 }}
+            >
+              Cancel
+            </Button>
             <Button type="primary" onClick={add} loading={adding} style={{ minHeight: 40, padding: '0 18px' }}>
               Add finding
             </Button>

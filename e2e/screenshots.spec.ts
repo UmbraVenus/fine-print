@@ -57,6 +57,7 @@ test('04 queue, 05 review, 06 what changed, 07 other formats, 08 history', async
   await page.locator('[data-finding="1"]').getByRole('button', { name: 'Keep' }).click()
   await expect(page.locator('[data-finding="1"]').getByRole('button', { name: 'Kept' })).toBeVisible()
   await page.getByRole('button', { name: /^Finding 1:/ }).click()
+  await page.getByRole('button', { name: 'Add a finding' }).click()
   await page.getByPlaceholder('What does the submitter need to fix? Quote the words if you can.').fill(
     "The photo makes the loan look instant. Pick an image that doesn't suggest same-day cash.",
   )

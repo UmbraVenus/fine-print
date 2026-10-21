@@ -9,6 +9,7 @@ test('a reviewer finding that quotes the ad is pinned there, for both roles, and
   await page.goto('/review/3')
 
   // Quoted words that are on the ad get a person pin, linked to the card.
+  await page.getByRole('button', { name: 'Add a finding' }).click()
   await page.getByPlaceholder('What does the submitter need to fix? Quote the words if you can.').fill('Drop “As low as 7.99% APR”: show the full range.')
   await page.getByRole('button', { name: 'Add finding' }).click()
   const pin = page.getByRole('button', { name: /^Reviewer finding: Drop/ })
@@ -17,6 +18,7 @@ test('a reviewer finding that quotes the ad is pinned there, for both roles, and
   await expect(pin).toHaveAttribute('aria-pressed', 'true')
 
   // Words that aren't on the ad stay plain text.
+  await page.getByRole('button', { name: 'Add a finding' }).click()
   await page.getByPlaceholder('What does the submitter need to fix? Quote the words if you can.').fill('Add “then 20.24% variable APR” after it.')
   await page.getByRole('button', { name: 'Add finding' }).click()
   await expect(page.getByText('FROM YOU')).toHaveCount(2)

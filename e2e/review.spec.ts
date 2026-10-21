@@ -48,6 +48,7 @@ test('keep, edit, dismiss with a reason, restore', async ({ page }) => {
 test('reviewer requests changes on Fall personal loan', async ({ page }) => {
   await page.goto('/review/3')
   await page.locator('[data-finding="1"]').getByRole('button', { name: 'Keep' }).click()
+  await page.getByRole('button', { name: 'Add a finding' }).click()
   await page.getByPlaceholder('What does the submitter need to fix? Quote the words if you can.').fill('Pick an image that doesn’t suggest same-day cash.')
   await page.getByRole('button', { name: 'Add finding' }).click()
   await expect(page.getByText('FROM YOU')).toBeVisible()
