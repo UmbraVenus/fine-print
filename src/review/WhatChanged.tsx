@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { AdView } from '../ads/AdView'
 import type { Marker } from '../ads/markers'
 import { SeverityTag } from '../components/StatusTag'
-import { Group, NumberBadge, ReviewerPin, cardStyle, reviewerN, type Numbered } from '../findings/parts'
+import { AutoTitle, Group, NumberBadge, ReviewerPin, cardStyle, reviewerN, type Numbered } from '../findings/parts'
 import type { Rule } from '../lib/detail'
 import { ReviewSuggestionCard, type SuggestionActions } from './SuggestionCards'
 import { previousSummary, type Comparison } from './compare'
@@ -115,9 +115,7 @@ export function WhatChanged({
   return (
     <section className="fp-card fp-panel" aria-labelledby="what-changed">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h2 id="what-changed" className="fp-panel-title">
-          What changed
-        </h2>
+        <AutoTitle id="what-changed">What changed</AutoTitle>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
           {critical === 0 && caution === 0 && <SeverityTag kind="good">Good standing</SeverityTag>}
           {critical > 0 && <SeverityTag kind="critical">{critical} Critical</SeverityTag>}

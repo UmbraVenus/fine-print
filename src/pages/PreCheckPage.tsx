@@ -7,6 +7,7 @@ import { FilledIcon, Icon } from '../components/Icon'
 import { Pager } from '../components/Pager'
 import { StatusTag } from '../components/StatusTag'
 import {
+  AutoTitle,
   CountTags,
   FixBox,
   GoodList,
@@ -530,9 +531,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
           )}
           <section className="fp-card fp-panel" aria-labelledby="auto-suggestions" aria-busy={checking}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <h2 id="auto-suggestions" className="fp-panel-title">
-                Auto suggestions
-              </h2>
+              <AutoTitle id="auto-suggestions">Auto suggestions</AutoTitle>
               {!checking && (
                 <CountTags
                   critical={critical.length}

@@ -160,6 +160,24 @@ export function Group({
   )
 }
 
+const AUTO_DISCLAIMER = 'Auto suggestions are generated automatically and can be wrong. Use them as a starting point; the call is yours.'
+
+/** A panel title for anything the auto check wrote, with what to keep in mind about it. */
+export function AutoTitle({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <h2 id={id} className="fp-panel-title">
+        {children}
+      </h2>
+      <Tooltip title={AUTO_DISCLAIMER}>
+        <button type="button" className="fp-info" aria-label={`About these suggestions: ${AUTO_DISCLAIMER}`}>
+          <Icon name="info" size={16} />
+        </button>
+      </Tooltip>
+    </div>
+  )
+}
+
 export function RuleLine({ rule }: { rule: Rule | null }) {
   if (!rule) return null
   return (

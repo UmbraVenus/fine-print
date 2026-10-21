@@ -6,7 +6,7 @@ import { useWorkspace } from '../app/workspace'
 import { Icon } from '../components/Icon'
 import { Pager } from '../components/Pager'
 import { StatusTag, Tag } from '../components/StatusTag'
-import { CountTags, GoodList, Group, markersFor, numberFindings, revealCard, revealPin, reviewerMarkers } from '../findings/parts'
+import { AutoTitle, CountTags, GoodList, Group, markersFor, numberFindings, revealCard, revealPin, reviewerMarkers } from '../findings/parts'
 import { api, ApiError } from '../lib/api'
 import { dayPhrase } from '../lib/dates'
 import { sentText, type AdDetail } from '../lib/detail'
@@ -219,9 +219,7 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
     groups = (
       <section className="fp-card fp-panel" aria-labelledby="auto-suggestions">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <h2 id="auto-suggestions" className="fp-panel-title">
-            Auto suggestions
-          </h2>
+          <AutoTitle id="auto-suggestions">Auto suggestions</AutoTitle>
           <CountTags critical={critical.length} caution={caution.length} good={goodIds.length} checksRun={current.check?.checks_run ?? 0} />
         </div>
         {critical.length > 0 && (
