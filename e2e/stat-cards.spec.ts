@@ -29,24 +29,28 @@ test('My ads: each card shows just its ads, and clicking it again shows all', as
   await expect(rows).toHaveCount(8)
 })
 
-test('Queue: due today filters, you reviewed opens History, and the auto check sorts', async ({ page }) => {
+test('Queue: due today filters; the other cards are plain numbers; the auto check sorts', async ({ page }) => {
   await setRole(page, 'reviewer')
   await page.goto('/queue')
   const rows = page.locator('tbody tr.ant-table-row')
   await expect(rows).toHaveCount(9)
 
-  await page.locator('[data-stat="due_today"]').click()
+  const due = page.locator('[data-stat="due_today"]')
+  await due.click()
   await expect(rows).toHaveCount(4)
   await expect(page.locator('tbody td', { hasText: /^Today$/ })).toHaveCount(4)
-  await page.locator('[data-stat="waiting"]').click()
+  await expect(due).toContainText('Showing only these')
+  await due.click()
   await expect(rows).toHaveCount(9)
+
+  // Only cards that filter are buttons, and they show the filter funnel.
+  await expect(page.locator('button[data-stat]')).toHaveCount(1)
+  await expect(page.locator('[data-stat="waiting"] .fp-stat-funnel')).toHaveCount(0)
+  await expect(page.locator('[data-stat="reviewed"]')).not.toHaveAttribute('href')
 
   // Most serious first, then Good standing last; the default order is by due date.
   await page.getByRole('columnheader', { name: /Auto check/ }).locator('.ant-table-column-sorters').click()
   await expect(rows.first()).toContainText('Best loans of 2026')
   await expect(rows.first()).toContainText('3 Critical')
   await expect(rows.last()).toContainText('Good standing')
-
-  await page.locator('[data-stat="reviewed"]').click()
-  await expect(page).toHaveURL(/\/history$/)
 })

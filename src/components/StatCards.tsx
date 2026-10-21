@@ -1,6 +1,5 @@
 import { Tooltip } from 'antd'
 import type { CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
 import type { Stat } from '../lib/types'
 import { Icon, type IconName } from './Icon'
 
@@ -55,15 +54,15 @@ export function TrendBadge({ trend, inert = false }: { trend: NonNullable<Stat['
   )
 }
 
-/** A card can filter the table below it (on or off), or open another page. */
-export type StatAction = { active: boolean; onClick: () => void } | { to: string }
+/** A card that filters the table below it, on or off. */
+export type StatAction = { active: boolean; onClick: () => void }
 
 export function StatCards({ stats, actions = {} }: { stats: Stat[]; actions?: Record<string, StatAction> }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
       {stats.map((stat) => {
         const action = actions[stat.key]
-        const active = Boolean(action && 'active' in action && action.active)
+        const active = Boolean(action?.active)
         const content = (
           <>
             <span
@@ -89,14 +88,21 @@ export function StatCards({ stats, actions = {} }: { stats: Stat[]; actions?: Re
                 {stat.trend && <TrendBadge trend={stat.trend} inert={Boolean(action)} />}
               </span>{' '}
               <span style={{ fontSize: 13, lineHeight: '16px', color: '#4A5468' }}>{stat.label}</span>
+              {active && <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 600, color: '#115E59' }}>Showing only these</span>}
               {action && (
                 // The card's name is what it shows, plus what the badge and a click mean.
                 <span className="fp-visually-hidden">
                   {stat.trend ? `, ${trendText(stat.trend)}` : ''}
-                  {'to' in action ? '. Open History' : action.active ? '. Showing only these; click to show all' : '. Show only these'}
+                  {active ? '. Click to show all' : '. Filter the table to these'}
                 </span>
               )}
             </span>
+            {action && (
+              // The same funnel as the table's column filters: this card filters the table.
+              <span aria-hidden="true" className="fp-stat-funnel" style={{ color: active ? '#0F766E' : '#8A93A6' }}>
+                <Icon name="filter" size={14} strokeWidth={2.2} />
+              </span>
+            )}
           </>
         )
         const style: CSSProperties = {
@@ -112,16 +118,10 @@ export function StatCards({ stats, actions = {} }: { stats: Stat[]; actions?: Re
           alignItems: 'center',
           gap: 14,
           boxSizing: 'border-box',
+          position: 'relative',
           font: 'inherit',
           color: 'inherit',
           textDecoration: 'none',
-        }
-        if (action && 'to' in action) {
-          return (
-            <Link key={stat.key} data-stat={stat.key} to={action.to} className="fp-stat-card" style={style}>
-              {content}
-            </Link>
-          )
         }
         if (action) {
           return (

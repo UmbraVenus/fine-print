@@ -495,17 +495,15 @@ export function AdTable({
   )
 }
 
-/** What clicking a stat card does: show just those rows, or open another page. */
-const STAT_ACTIONS: Record<TableView, Record<string, Partial<Filters> | { to: string }>> = {
+/** Stat cards that filter the table below to exactly the rows they count. The rest are plain numbers. */
+const STAT_ACTIONS: Record<TableView, Record<string, Partial<Filters>>> = {
   'my-ads': {
     attention: { status: ['draft', 'changes_required'] },
     in_review: { status: ['pending'] },
     approved: { status: ['approved', 'approved_with_changes'] },
   },
   queue: {
-    waiting: {},
     due_today: { due: ['today'] },
-    reviewed: { to: '/history' },
   },
   history: {},
 }
@@ -521,13 +519,9 @@ export function TablePage({ title, view }: { title: string; view: TableView }) {
 
   const actions: Record<string, StatAction> = {}
   for (const [key, action] of Object.entries(STAT_ACTIONS[view])) {
-    if ('to' in action) {
-      actions[key] = { to: action.to as string }
-      continue
-    }
     const preset = { ...NO_FILTERS, ...action }
-    // A card is on while the table shows exactly its rows; "waiting" is everything, so it never stays on.
-    const active = Object.keys(action).length > 0 && JSON.stringify(preset) === JSON.stringify(filters)
+    // A card is on while the table shows exactly its rows.
+    const active = JSON.stringify(preset) === JSON.stringify(filters)
     actions[key] = { active, onClick: () => applyFilters(active ? NO_FILTERS : preset) }
   }
 

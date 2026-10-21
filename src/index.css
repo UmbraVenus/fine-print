@@ -1019,3 +1019,12 @@ a.fp-pager:hover {
   background: #115e59;
   color: #ffffff;
 }
+.fp-stat-funnel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+}
+.fp-stat-card:hover .fp-stat-funnel {
+  color: var(--fp-primary) !important;
+}
