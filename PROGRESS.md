@@ -48,6 +48,7 @@
 - Secret link (`ACCESS_KEY`): the site and API open only from `?key=…`, then a 30-day cookie; noindex everywhere. Live checks reuse the last result when nothing changed, and are capped (10 a minute per visitor, 200 a day, settable).
 - Insights (Reviewer), from the owner's mock-up: ads approved per week, submit to approval, rounds per ad and approved in round 1, each against the week before Fine Print with a weekly sparkline; top issue types; affiliate compliance scores. All computed; the History filler now has several rounds per returned ad, the issue each round was sent back for, and four affiliate publishers. Check: `test_insights_tell_the_same_story_as_history`, `e2e/insights.spec.ts`.
 - Stat cards are clickable: on My ads and the Queue they filter the table to their rows (click again for all; the active card has a teal border); "you reviewed this week" opens History. The Queue's Auto check column also sorts, most serious first. Check: `e2e/stat-cards.spec.ts`, `test_stat_card_filters_match_their_numbers`.
+- Insights moved back under History (Queue is the Reviewer's home again), with a one-line summary and Open the Queue. Requesting changes on an internal ad puts it in My ads, so it can be Pre-checked and resubmitted. Add a rule removed (owner's call).
 
 ## Ideas, not built
 

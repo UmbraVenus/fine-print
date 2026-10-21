@@ -105,3 +105,17 @@ def test_quoted_words_in_a_reviewer_finding_pin_it_to_the_ad(db):
     assert edited["layer_id"] is None and edited["quote"] is None
     repinned = actions.edit_reviewer_finding(db, pinned["id"], 'Reword "Checking your rate".')
     assert (repinned["layer_id"], repinned["quote"]) == ("body", "Checking your rate")
+
+
+def test_changes_required_hands_an_internal_ad_to_marketing(db):
+    def mine():
+        return [r["id"] for r in repo.list_ads(db, "my-ads", page_size=50)["rows"]]
+
+    assert 8 not in mine()  # Student card post, someone else's until it's sent back
+    result = actions.decide(db, 8, "changes_required", "Add the APR.", NOW)
+    assert 8 in mine() and repo.ad_detail(db, 8)["attention"] is not None
+    actions.undo(db, result["undo"])
+    assert 8 not in mine()
+    # Affiliates don't log in, so their ads never land in My ads.
+    actions.decide(db, 6, "changes_required", "Add the disclosure.", NOW)
+    assert 6 not in mine()

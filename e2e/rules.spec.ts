@@ -17,37 +17,11 @@ test('rules page lists the 9 rules in three sections', async ({ page }) => {
   await page.screenshot({ path: 'screenshots/m6-rules.png', fullPage: true })
 })
 
-test('only reviewers can add a rule', async ({ page }) => {
-  await setRole(page, 'marketer')
-  await page.goto('/rules')
-  await expect(page.getByRole('heading', { level: 1, name: 'Rules' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Add a rule' })).toHaveCount(0)
-})
-
-test('add a rule', async ({ page }) => {
-  await setRole(page, 'reviewer')
-  await page.goto('/rules')
-  await page.getByRole('button', { name: 'Add a rule' }).click()
-  const drawer = page.getByRole('dialog')
-  await drawer.getByLabel('Rule name').fill('Balance transfer fees')
-  await drawer.getByLabel('What it checks').fill('A balance transfer offer must show the transfer fee next to the intro APR.')
-  await drawer.getByRole('radio', { name: 'Critical' }).click()
-  await drawer.getByRole('checkbox', { name: 'Credit card' }).check()
-  await drawer.getByLabel('Don’t example').fill('0% intro APR for 18 months')
-  await drawer.getByLabel('Do example').fill('0% intro APR for 18 months. 3% transfer fee.')
-  await page.screenshot({ path: 'screenshots/m6-add-rule.png' })
-  await drawer.getByRole('button', { name: 'Add rule' }).click()
-  await expect(page.getByText('Added “Balance transfer fees”. The next check uses it.')).toBeVisible()
-  await expect(page.getByText('Every ad is checked against these 10 rules.', { exact: false })).toBeVisible()
-  const row = page.locator('[data-rule="custom-balance-transfer-fees"]')
-  await expect(row.getByText('Added by reviewer')).toBeVisible()
-  await expect(row.getByText('Applies to credit cards · Flagged as Critical')).toBeVisible()
-})
-
-test('a rule needs every field', async ({ page }) => {
-  await setRole(page, 'reviewer')
-  await page.goto('/rules')
-  await page.getByRole('button', { name: 'Add a rule' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Add rule' }).click()
-  await expect(page.getByRole('alert')).toHaveText('Fill in every field and pick what it applies to.')
+test('rules are read-only for both roles', async ({ page }) => {
+  for (const role of ['reviewer', 'marketer'] as const) {
+    await setRole(page, role)
+    await page.goto('/rules')
+    await expect(page.getByRole('heading', { level: 1, name: 'Rules' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Add a rule' })).toHaveCount(0)
+  }
 })

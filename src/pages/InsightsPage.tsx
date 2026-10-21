@@ -18,7 +18,7 @@ interface Metric {
 }
 
 interface Insights {
-  hero: { headline: string; lines: string[] } | null
+  hero: { line: string } | null
   metrics: Metric[]
   issues: Array<{ rule_id: string; name: string; share: number }>
   affiliates: Array<{ source: string; score: number; ads: number; status: 'good' | 'watch' | 'at_risk' }>
@@ -72,36 +72,29 @@ function MetricCard({ metric }: { metric: Metric }) {
   )
 }
 
-/** The headline: the throughput story in one line, and the way into today's work. */
+/** One line of the throughput story, and the way into today's work. */
 function Hero({ hero, pending }: { hero: NonNullable<Insights['hero']>; pending: number | null }) {
   return (
     <section
-      aria-labelledby="insights-hero"
+      aria-label="This week"
       style={{
         background: '#E6F4F1',
         borderLeft: '4px solid #0F766E',
         borderRadius: 12,
-        padding: '28px 32px',
+        padding: '16px 20px 16px 24px',
         display: 'flex',
         flexWrap: 'wrap',
-        alignItems: 'flex-end',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        gap: 24,
+        gap: 16,
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, flex: '1 1 420px' }}>
-        <h2 id="insights-hero" style={{ margin: 0, fontSize: 44, lineHeight: '52px', fontWeight: 800, letterSpacing: '-0.025em' }}>
-          {hero.headline}
-        </h2>
-        {hero.lines.map((line) => (
-          <p key={line} style={{ margin: 0, fontSize: 17, lineHeight: '26px', color: '#15213B' }}>
-            {line}
-          </p>
-        ))}
-      </div>
+      <p data-insight="hero" style={{ margin: 0, fontSize: 18, lineHeight: '26px', fontWeight: 700 }}>
+        {hero.line}
+      </p>
       <Link to="/queue" className="fp-hero-button">
         Open the Queue{pending !== null ? ` · ${pending}` : ''}
-        <Icon name="arrowRight" size={18} strokeWidth={2.2} />
+        <Icon name="arrowRight" size={16} strokeWidth={2.2} />
       </Link>
     </section>
   )

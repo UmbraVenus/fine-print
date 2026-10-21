@@ -7,11 +7,10 @@ test.use({ viewport: { width: 1280, height: 1000 } })
 test('README tour', async ({ page }) => {
   await resetData(page)
 
-  // 1. Land on Insights, then open the Queue.
+  // 1. Open Queue.
   await setRole(page, 'reviewer')
   await page.goto('/')
-  await expect(page).toHaveURL(/\/insights$/)
-  await page.getByRole('link', { name: 'Open the Queue · 9' }).click()
+  await expect(page).toHaveURL(/\/queue$/)
   await expect(page.locator('[data-stat="waiting"] [data-stat-value]')).toHaveText('9')
 
   // 2. Review Fall personal loan.
@@ -61,17 +60,7 @@ test('README tour', async ({ page }) => {
   await expect(page.getByRole('dialog').getByRole('button', { name: 'Download ad' })).toBeVisible()
   await page.keyboard.press('Escape')
 
-  // 8. Add a rule and Re-check.
-  await page.goto('/rules')
-  await page.getByRole('button', { name: 'Add a rule' }).click()
-  const drawer = page.getByRole('dialog')
-  await drawer.getByLabel('Rule name').fill('Balance transfer fees')
-  await drawer.getByLabel('What it checks').fill('A balance transfer offer must show the transfer fee next to the intro APR.')
-  await drawer.getByRole('checkbox', { name: 'Credit card' }).check()
-  await drawer.getByLabel('Don’t example').fill('0% intro APR for 18 months')
-  await drawer.getByLabel('Do example').fill('0% intro APR for 18 months. 3% transfer fee.')
-  await drawer.getByRole('button', { name: 'Add rule' }).click()
-  await expect(page.getByText('Added “Balance transfer fees”.', { exact: false })).toBeVisible()
+  // 8. Re-check a draft.
   await setRole(page, 'marketer')
   await page.goto('/ads/1/pre-check')
   await page.getByRole('button', { name: 'Re-check' }).click()

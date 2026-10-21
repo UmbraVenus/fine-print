@@ -133,7 +133,7 @@ def decide(db: Db, ad_id: int, status: str, message: str | None, now: datetime) 
     findings = db.all("SELECT id, sent_to_submitter FROM findings WHERE ad_version_id = ?", (version["id"],))
     snapshot = {
         "ad_id": ad_id,
-        "ad": {k: ad[k] for k in ("status", "closed_at", "updated_at", "live_since", "due_date")},
+        "ad": {k: ad[k] for k in ("status", "closed_at", "updated_at", "live_since", "due_date", "is_mine")},
         "sent": {str(f["id"]): f["sent_to_submitter"] for f in findings},
     }
 
@@ -150,7 +150,11 @@ def decide(db: Db, ad_id: int, status: str, message: str | None, now: datetime) 
         db.run("""UPDATE findings SET sent_to_submitter = 1 WHERE ad_version_id = ?
                   AND (origin = 'reviewer' OR state IN ('kept', 'edited'))""", (version["id"],))
     closed = None if status == "changes_required" else iso(now)
-    db.update("ads", ad_id, {"status": status, "closed_at": closed, "updated_at": iso(now)})
+    changes = {"status": status, "closed_at": closed, "updated_at": iso(now)}
+    if status == "changes_required" and ad["source"] == "internal":
+        # Sent back to marketing: it lands in My ads, ready for Pre-check.
+        changes["is_mine"] = 1
+    db.update("ads", ad_id, changes)
     event_id = _event(db, ad_id, now, "Reviewer", "decision", {
         "status": status, "message": (message or "").strip() or None,
         "version": ad["current_version"], "by_you": True,

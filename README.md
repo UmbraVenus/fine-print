@@ -86,14 +86,14 @@ From spec section 11. The sidebar shows the first three under "Coming next":
 
 ## A short tour (about 5 minutes)
 
-1. **Land on Insights, then open the Queue.** You start as a Reviewer, on Insights: approvals per week against the week before Fine Print, all computed from the data. Click **Open the Queue**: 9 ads, sorted by due date, with 4 due today. Click a stat card to show just those ads.
+1. **Open Queue.** You start as a Reviewer. There are 9 ads, sorted by due date, with 4 due today. The stat cards are computed from the data; click one to show just those ads. (Insights, under History, has the throughput story.)
 2. **Review Fall personal loan.** Click **Review** (it opens a new tab). Pins on the ad and cards on the right are linked. Try the info icon next to "Claims · Rate claims", the submitter's note, and **Keep** on finding 1. Add a finding of your own, such as "Pick an image that doesn't suggest same-day cash."
 3. **Request changes.** The message comes prefilled from what you kept and added. The next ad in the queue opens in the same tab, and the toast offers **Undo** for 5 seconds.
 4. **Switch to Marketer** (VIEWING AS, top left). Fall personal loan now shows "Changes required · 2 comments from your reviewer" in My ads.
 5. **Fix it and resubmit.** Click **Pre-check**. The reviewer's comments are at the top. On the rate suggestion, click **Swap** (top right of the suggested wording): the headline now reads "Personal loans from 7.99% to 29.99% APR with autopay" and shows "Edited". (Any text on the ad can also be clicked and edited by hand.) Click **Mark resolved**, add a note if you like, and **Submit**. It goes back to Pending as v2.
 6. **Approve the What changed view.** Switch back to Reviewer and open Fall personal loan (now v2) from the Queue. You see v1 above v2, the rate claim under **Resolved**, and green markers on the change. Click **Approve**.
 7. **Check History.** Search for "Fall personal loan" to find it at the top. The approved-this-week count went up by one. Click the name for the drawer with its full activity, and **Download ad** to get the approved ad as a PNG, ready to launch.
-8. **Add a rule and Re-check.** Open **Rules** and click **Add a rule**: "Balance transfer fees", Claims, Critical, Credit card, with a Don't and a Do example. Then, as Marketer, open **Pre-check** on Cash back card and click **Re-check**. With an `ANTHROPIC_API_KEY` set, the live check now includes the new rule. Without one, you'll see "Auto check unavailable right now. You can still submit as usual."
+8. **Re-check a draft.** As Marketer, open **Pre-check** on Cash back card, change some copy and click **Re-check**. With an `ANTHROPIC_API_KEY` set, the live check runs every rule that applies against the new copy. Without one, you'll see "Auto check unavailable right now. You can still submit as usual."
 
 ## Stack
 

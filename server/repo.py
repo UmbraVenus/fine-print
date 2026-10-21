@@ -363,16 +363,11 @@ def insights(db: Db, now: datetime) -> dict:
     base, latest = approved[0], approved[-1]
     hero = None
     if base:
-        times = latest / base
-        hero = {
-            "headline": f"{round(times) if times >= 3 else round(times, 1)}× more ads approved every week",
-            "lines": [f"{latest} approved this week, up from {base} before Fine Print.",
-                      "Same rules, a fraction of the back-and-forth."],
-        }
+        hero = {"line": f"{latest} approved this week, up from {base} before using Fine Print."}
     metrics.append({
         "key": "approved", "label": "More ads approved per week", "value": latest, "display": str(latest),
-        "trend": _trend(_pct_change(latest, base), "up", "vs. before Fine Print"),
-        "note": f"{'Up' if latest >= base else 'Down'} from {base} before Fine Print",
+        "trend": _trend(_pct_change(latest, base), "up", "vs. before using Fine Print"),
+        "note": f"{'Up' if latest >= base else 'Down'} from {base} before using Fine Print",
         "series": approved,
     })
     base_t, latest_t = turnaround[0], turnaround[-1]
@@ -381,7 +376,7 @@ def insights(db: Db, now: datetime) -> dict:
         metrics.append({
             "key": "turnaround", "label": "Time saved per ad", "value": latest_t,
             "display": f"{saved}h faster" if saved > 0 else f"{latest_t}h",
-            "trend": _trend(_pct_change(latest_t, base_t), "down", "vs. before Fine Print"),
+            "trend": _trend(_pct_change(latest_t, base_t), "down", "vs. before using Fine Print"),
             "note": f"From {_duration(base_t)} to {latest_t} hours, submit to approval",
             "series": turnaround,
         })

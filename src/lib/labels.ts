@@ -16,8 +16,7 @@ export const STATUS_LABEL: Record<AdStatus, string> = {
 }
 
 export const ROLE_LABEL: Record<Role, { name: string; team: string; home: string }> = {
-  // Insights first: the throughput story, then the Queue is one click away.
-  reviewer: { name: 'Reviewer', team: 'Compliance team', home: '/insights' },
+  reviewer: { name: 'Reviewer', team: 'Compliance team', home: '/queue' },
   marketer: { name: 'Marketer', team: 'Marketing team', home: '/my-ads' },
 }
 

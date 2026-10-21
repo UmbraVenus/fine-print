@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 test('reviewer nav, with the pending count', async ({ page }) => {
   await page.goto('/queue')
   const nav = page.getByRole('navigation', { name: 'Main' })
-  await expect(nav.getByRole('link')).toHaveText(['Queue9', 'History', 'Rules'])
+  await expect(nav.getByRole('link')).toHaveText(['Queue9', 'History', 'Insights', 'Rules'])
   await expect(nav.getByRole('link', { name: /Queue/ })).toHaveClass(/active/)
   await page.screenshot({ path: 'screenshots/m2-shell-reviewer.png' })
 })
@@ -55,7 +55,7 @@ test('the sidebar collapses to icons', async ({ page }) => {
   await page.goto('/queue')
   await page.getByRole('button', { name: 'Collapse menu' }).click()
   await expect(page.getByRole('button', { name: 'Expand menu' })).toBeVisible()
-  await expect(page.getByRole('link', { name: 'History' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'History', exact: true })).toBeVisible()
   await page.screenshot({ path: 'screenshots/m2-shell-collapsed.png' })
   await page.getByRole('button', { name: 'Expand menu' }).click()
 })

@@ -95,10 +95,6 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     def rules():
         return jsonify(rules=repo.rules(get_db()))
 
-    @app.post("/api/rules")
-    def add_rule():
-        return jsonify(actions.add_rule(get_db(), body(), now())), 201
-
     @app.errorhandler(actions.ActionError)
     def action_error(error: actions.ActionError):
         return jsonify(error=str(error)), error.status
