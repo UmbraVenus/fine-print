@@ -276,11 +276,13 @@ def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) ->
                 status = "rejected"
             else:
                 status = "approved_with_changes" if rng.random() < 0.4 else "approved"
+            rng.random()  # Unused now; drawn so the rest of the history doesn't shift.
             ad = {
                 "id": ad_id, "name": name, "format": fmt, "product": product, "source": source,
                 "status": status, "template": template, "theme": theme, "layers": layers,
                 "submitted": submitted, "closed": closed, "first_pass": first_pass,
-                "by_you": rng.random() < 1 / 3,
+                # Every third ad is yours, through every round, so "you reviewed" follows the volume.
+                "by_you": ad_id % 3 == 0,
                 "precheck": rng.random() < 0.7,
                 "note": rng.choice(REVIEWER_NOTES) + " No second review needed." if status == "approved_with_changes" else None,
                 "rejection": "The offer in this ad doesn't exist." if rejected else None,
@@ -297,7 +299,8 @@ def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) ->
                     _, finding, message = ISSUES[rule_id]
                     round_.update(rule_id=rule_id, finding=finding, message=message,
                                   changes_at=start + timedelta(hours=segment * rng.uniform(0.4, 0.7)),
-                                  by_you=rng.random() < 1 / 3)
+                                  by_you=ad["by_you"])
+                    rng.random()  # Unused now; drawn so the rest of the history doesn't shift.
                 ad["rounds"].append(round_)
             ads.append(ad)
             ad_id += 1
