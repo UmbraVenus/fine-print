@@ -1,6 +1,7 @@
 import { Skeleton } from 'antd'
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { PageErrorBoundary } from './app/PageErrorBoundary'
 import { Shell } from './app/Shell'
 import { WorkspaceProvider, useWorkspace } from './app/workspace'
 import { ROLE_LABEL } from './lib/labels'
@@ -46,9 +47,11 @@ function ForRole({ role, children }: { role: Role; children: React.ReactNode }) 
 }
 
 function AppRoutes() {
+  const { pathname } = useLocation()
   return (
     <Shell>
       <DocumentTitle />
+      <PageErrorBoundary key={pathname}>
       <Suspense fallback={<Skeleton active paragraph={{ rows: 8 }} />}>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -61,6 +64,7 @@ function AppRoutes() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       </Suspense>
+      </PageErrorBoundary>
     </Shell>
   )
 }

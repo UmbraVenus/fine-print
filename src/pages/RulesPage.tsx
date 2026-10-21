@@ -176,7 +176,7 @@ function AddRuleDrawer({ open, onClose, onAdded }: { open: boolean; onClose: () 
     <Drawer
       open={open}
       onClose={close}
-      width={520}
+      size={520}
       closable={false}
       destroyOnHidden
       title={

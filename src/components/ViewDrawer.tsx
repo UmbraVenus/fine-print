@@ -40,7 +40,7 @@ export function ViewDrawer() {
     <Drawer
       open={open}
       onClose={close}
-      width={480}
+      size={480}
       closable={false}
       destroyOnHidden
       title={
