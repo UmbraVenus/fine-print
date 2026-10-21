@@ -890,3 +890,37 @@ a.fp-pager:hover {
   background: var(--fp-primary);
   border-radius: 4px;
 }
+
+.fp-copy-button:disabled {
+  cursor: default;
+  color: var(--fp-ink-muted);
+  border-color: var(--fp-line);
+  background: #ffffff;
+}
+.fp-resolve {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 7px 12px;
+  min-height: 36px;
+  color: #067647;
+  background: #ffffff;
+  border: 1px solid #067647;
+  cursor: pointer;
+}
+.fp-resolve:hover {
+  background: #ecfdf3;
+}
+.fp-resolved-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: #067647;
+  background: #ecfdf3;
+  border-radius: 8px;
+  padding: 8px 12px;
+}

@@ -139,3 +139,25 @@ def test_add_rule_validates_and_applies_to_live_checks(db):
     checker.run_check(db, version_id(db, 8), NOW, client=client)
     flagged = [f for f in repo.ad_detail(db, 8)["current"]["findings"] if f["rule_id"] == "custom-balance-transfer-fees"]
     assert flagged and flagged[0]["severity"] == "critical"
+
+
+def test_wording_without_a_valid_quote_becomes_advice(db):
+    reply = {"findings": [{"rule_id": "guarantees", "layer_id": "headline", "quote": "not on the ad",
+                           "text": "Promises guaranteed approval.", "fix_label": "Suggested wording",
+                           "suggested_fix": "See if you qualify in minutes."}], "passed_rule_ids": []}
+    checker.run_check(db, version_id(db, 6), NOW, client=FakeClient(reply=reply))
+    finding = repo.ad_detail(db, 6)["current"]["findings"][0]
+    assert finding["quote"] is None and finding["fix_label"] == "Suggested fix"
+
+
+def test_resolved_mark_survives_a_live_recheck(db):
+    from server import actions
+
+    vid = version_id(db, 1)
+    trigger = next(f for f in repo.ad_detail(db, 1)["current"]["findings"] if f["rule_id"] == "trigger-terms")
+    actions.update_finding(db, trigger["id"], "resolve")
+    reply = {"findings": [{"rule_id": "trigger-terms", "layer_id": "headline", "quote": "No annual fee.",
+                           "text": "Needs the APR.", "fix_label": "Suggested wording",
+                           "suggested_fix": "No annual fee. 21.24%–29.24% variable APR."}], "passed_rule_ids": []}
+    checker.run_check(db, vid, NOW, client=FakeClient(reply=reply))
+    assert repo.ad_detail(db, 1)["current"]["findings"][0]["resolved_by_submitter"] is True

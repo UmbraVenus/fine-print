@@ -65,6 +65,10 @@ def update_finding(db: Db, finding_id: int, action: str, *, text: str | None = N
         db.update("findings", finding_id, {"state": "dismissed", "dismiss_reason": _clean(reason, "A reason")})
     elif action == "restore":
         db.update("findings", finding_id, {"state": "open", "dismiss_reason": None})
+    elif action == "resolve":
+        db.update("findings", finding_id, {"resolved_by_submitter": True})
+    elif action == "reopen":
+        db.update("findings", finding_id, {"resolved_by_submitter": False})
     elif action == "note":
         value = (note or "").strip() or None
         db.update("findings", finding_id, {"submitter_note": value[:1000] if value else None})

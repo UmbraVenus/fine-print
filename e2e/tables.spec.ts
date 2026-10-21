@@ -92,7 +92,7 @@ test('the view drawer opens from an ad name and closes with Escape', async ({ pa
   await page.getByRole('button', { name: 'Balance transfer banner' }).click()
   await expect(page).toHaveURL(/view=12/)
   const drawer = page.getByRole('dialog')
-  await expect(drawer.getByText('BEFORE IT GOES LIVE')).toBeVisible()
+  await expect(drawer.getByText('BEFORE IT GOES LIVE', { exact: true })).toBeVisible()
   await expect(drawer.getByText('Add “then 20.24%–28.24% variable APR” right after the intro rate. No second review needed.')).toBeVisible()
   await expect(drawer.getByText('Reviewer approved with changes')).toBeVisible()
   await expect(drawer.getByText('You submitted version 1')).toBeVisible()

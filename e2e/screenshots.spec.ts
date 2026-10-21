@@ -34,7 +34,7 @@ test('01 my ads, 02 view drawer, 03 pre-check', async ({ page }) => {
   await page.screenshot({ path: 'screenshots/final/01-my-ads-filter.png' })
   await page.keyboard.press('Escape')
   await page.goto('/my-ads?view=12')
-  await expect(page.getByText('BEFORE IT GOES LIVE')).toBeVisible()
+  await expect(page.getByText('BEFORE IT GOES LIVE', { exact: true })).toBeVisible()
   await page.waitForTimeout(800)
   await page.screenshot({ path: 'screenshots/final/02-view-drawer.png' })
   await page.goto('/ads/1/pre-check')

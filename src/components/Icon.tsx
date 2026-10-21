@@ -124,6 +124,13 @@ const STROKE: Record<string, ReactNode> = {
     </>
   ),
   check: <path d="M5 12l5 5 9-10" />,
+  download: (
+    <>
+      <path d="M12 3v12" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M5 21h14" />
+    </>
+  ),
   copy: (
     <>
       <rect x="9" y="9" width="12" height="12" rx="2" />

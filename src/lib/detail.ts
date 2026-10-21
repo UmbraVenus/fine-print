@@ -33,6 +33,7 @@ export interface Finding {
   dismiss_reason: string | null
   submitter_note: string | null
   sent_to_submitter: boolean
+  resolved_by_submitter: boolean
   position: number
   created_at: string
 }

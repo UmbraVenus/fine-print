@@ -37,3 +37,10 @@ It also opts into the server-side refusal fallback (`fallbacks: "default"`), so 
 ## Add a rule: "Affiliate content" checkbox
 
 The data model's `applies_to` allows products and/or "affiliate", but the 10-AddRule wireframe shows only the three products. **Default:** a fourth checkbox, "Affiliate content", so reviewers can add affiliate rules too.
+
+## After the milestones: changes the project owner asked for
+
+- **"Use this wording" replaces "Copy suggested fix".** CLAUDE.md and 03-PreCheck show a "Copy suggested fix" button, but a copied fix was often advice ("Add … right under the claim"), not text to paste. Now, when a suggestion is a change of words, "Use this wording" swaps the flagged words on the ad in one click. Seeded wording and the live check's prompt both make "Suggested wording" a drop-in replacement for the quote. A wording suggestion without a valid quote is turned into advice. Advice-style suggestions get "Edit on ad", which opens that text for editing.
+- **"Mark resolved" is manual.** The marketer marks a suggestion resolved by hand (a person decides, not the check). It moves to "Resolved by you" with a green pin, can be reopened, survives a live Re-check, and the reviewer sees "The submitter marked this resolved" on the card.
+- **Download ad (PNG)** in the View drawer, for Approved and Approved with changes ads only, so unapproved versions can't end up launched. It's drawn from the ad's data at full size and twice the pixel density.
+- **No uploads**, on purpose (see the README's What's next).

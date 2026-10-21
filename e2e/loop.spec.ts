@@ -7,37 +7,79 @@ test.beforeEach(async ({ page }) => {
   await resetData(page)
 })
 
-test('pre-check: suggestions, copy fix, a note, and no-key re-check', async ({ page, context }) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+test('pre-check: use the wording, edit on ad, mark resolved, a note, and no-key re-check', async ({ page }) => {
   await setRole(page, 'marketer')
   await page.goto('/ads/1/pre-check')
   await expect(page.getByRole('heading', { level: 1, name: 'Cash back card' })).toBeVisible()
   await expect(page.getByText('Facebook ad · Credit card')).toBeVisible()
   await expect(page.getByRole('button', { name: /Critical · 1/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Good · 4/ })).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByRole('button', { name: 'Copy suggested fix' })).toHaveCount(0)
   await page.screenshot({ path: 'screenshots/m5-pre-check.png', fullPage: true })
 
+  // 1. "Use this wording" swaps the flagged words on the ad, in place.
   const first = page.locator('[data-finding="1"]')
-  await first.getByRole('button', { name: 'Copy suggested fix' }).click()
-  await expect(page.getByText('Suggested fix copied')).toBeVisible()
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('21.24%–29.24% variable APR')
+  await first.getByRole('button', { name: 'Use this wording' }).click()
+  await expect(page.getByText('Wording used on the ad.', { exact: false })).toBeVisible()
+  await expect(page.locator('[data-layer="headline"]')).toContainText('21.24%–29.24% variable APR.')
+  await expect(first.getByRole('button', { name: 'Wording used' })).toBeDisabled()
+  await expect(page.locator('[data-layer="headline"] .fp-edited-badge')).toHaveText('Edited')
 
-  await first.getByRole('button', { name: 'Add a note' }).click()
-  await first.getByLabel('Note to your reviewer (optional)').fill('Legal approved this wording.')
-  await first.getByLabel('Note to your reviewer (optional)').blur()
+  // 2. "Edit on ad" opens that text for editing (shown once the wording's been used).
+  await first.getByRole('button', { name: 'Edit on ad' }).click()
+  const editor = page.getByRole('textbox', { name: 'Edit text' })
+  await expect(editor).toBeFocused()
+  await editor.press('Escape')
+
+  // 3. The marketer marks it resolved by hand; it moves to its own group, and can be reopened.
+  await first.getByRole('button', { name: 'Mark resolved' }).click()
+  await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
+  await expect(page.getByText('· 1 marked resolved')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Critical · 1/ })).toHaveCount(0)
+  await page.screenshot({ path: 'screenshots/final/03-pre-check-resolved.png', fullPage: true })
+  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Reopen' }).click()
+  await expect(page.getByRole('button', { name: /Critical · 1/ })).toBeVisible()
+  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Mark resolved' }).click()
+  await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
+
+  const second = page.locator('[data-finding="2"]')
+  await second.getByRole('button', { name: 'Add a note' }).click()
+  await second.getByLabel('Note to your reviewer (optional)').fill('Legal approved this wording.')
+  await second.getByLabel('Note to your reviewer (optional)').blur()
 
   await page.getByRole('button', { name: 'Re-check' }).click()
   await expect(page.getByText('Auto check unavailable right now. You can still submit as usual.')).toBeVisible()
   // Nothing is blocked: Submit still works.
   await expect(page.getByRole('button', { name: 'Submit' })).toBeEnabled()
 
-  // The reviewer sees the note on that finding.
+  // The reviewer sees what was marked resolved, and the note.
   await page.getByRole('button', { name: 'Submit' }).click()
   await expect(page).toHaveURL(/\/my-ads$/)
   await setRole(page, 'reviewer')
   await page.goto('/review/1')
-  await expect(page.getByText('Note from submitter')).toBeVisible()
-  await expect(page.getByText('Legal approved this wording.')).toBeVisible()
+  await expect(page.locator('[data-finding="1"]').getByText('The submitter marked this resolved.', { exact: false })).toBeVisible()
+  await expect(page.locator('[data-finding="2"]').getByText('Legal approved this wording.')).toBeVisible()
+})
+
+test('download the approved ad as a PNG', async ({ page }) => {
+  await setRole(page, 'marketer')
+  await page.goto('/my-ads?view=12')
+  const drawer = page.getByRole('dialog')
+  await expect(drawer.getByText('Make the change below before it goes live.')).toBeVisible()
+  const [download] = await Promise.all([page.waitForEvent('download'), drawer.getByRole('button', { name: 'Download ad' }).click()])
+  expect(download.suggestedFilename()).toBe('balance-transfer-banner-v1.png')
+  const file = await download.path()
+  await download.saveAs('screenshots/final/02-download-balance-transfer-banner.png')
+  const { readFileSync } = await import('node:fs')
+  const png = readFileSync(file)
+  expect(png.subarray(1, 4).toString()).toBe('PNG')
+  // Full size at 2x: the banner is 480px wide.
+  expect(png.readUInt32BE(16)).toBe(960)
+
+  // Only approved ads can be downloaded.
+  await page.goto('/my-ads?view=3')
+  await expect(page.getByRole('dialog').getByText('ACTIVITY')).toBeVisible()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Download ad' })).toHaveCount(0)
 })
 
 test('full loop: fix, resubmit, what changed, approve, history', async ({ page }) => {

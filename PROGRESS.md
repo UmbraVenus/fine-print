@@ -31,6 +31,14 @@
 - **Rows per page** is an antd Select, not a native select. The format filter also lists "Instagram post", which only affiliates use.
 - [x] **M8 · README**: what it is, with the headline number; how to run; how to deploy (Vercel + Turso + env vars); assumptions; what's next; and a short tour script. Seeding now uses batched multi-row inserts (about 190 statements in total), so Reset is quick on Turso too. `vercel.json` bundles the `server/` package with the API function.
 
+## After the milestones
+
+- Fixed: the local Flask server didn't read `.env` (added `python-dotenv`).
+- Fixed: "Go to" page took typed numbers past the last page as their last valid prefix ("300" went to page 30). It now checks on Enter and says "Pick a page from 1 to N".
+- Fixed: a page that failed to load left a blank screen. Dependencies are pre-bundled at dev-server startup, and an error screen retries once, then offers Reload.
+- Pre-check: "Use this wording", "Edit on ad" and a manual "Mark resolved", which the reviewer sees. Download ad (PNG) for approved ads. See BLOCKED.md.
+  - Checks: `e2e/loop.spec.ts` (use the wording, edit on ad, mark resolved and reopen, the reviewer sees it, PNG download at full size) and new server tests (resolve and reopen, drop-in wording, the resolved mark kept through a live Re-check).
+
 ## Ideas, not built
 
 _None yet._

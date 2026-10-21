@@ -79,3 +79,26 @@ def test_notes_reach_the_reviewer(db):
     actions.submit(db, 1, NOW)
     finding = repo.ad_detail(db, 1)["current"]["findings"][0]
     assert finding["submitter_note"] == "Legal approved this wording."
+
+
+def test_submitter_marks_a_suggestion_resolved_and_the_reviewer_sees_it(db):
+    from server import actions as a
+
+    finding = repo.ad_detail(db, 1)["current"]["findings"][0]
+    assert finding["resolved_by_submitter"] is False
+    assert a.update_finding(db, finding["id"], "resolve")["resolved_by_submitter"] == 1
+    a.submit(db, 1, NOW)
+    after = next(f for f in repo.ad_detail(db, 1)["current"]["findings"] if f["id"] == finding["id"])
+    assert after["resolved_by_submitter"] is True
+    assert a.update_finding(db, finding["id"], "reopen")["resolved_by_submitter"] == 0
+
+
+def test_seeded_wording_reads_correctly_in_place():
+    from server.seed_data import ADS
+
+    for ad in ADS:
+        for version in ad["versions"]:
+            texts = {l["id"]: l["text"] for l in version["layers"]}
+            for f in version["findings"]:
+                if f.get("fix_label") == "Suggested wording":
+                    assert f["quote"] and f["quote"] in texts[f["layer_id"]], (ad["name"], f["text"])

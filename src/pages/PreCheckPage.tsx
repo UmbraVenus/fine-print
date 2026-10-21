@@ -1,9 +1,9 @@
-import { Alert, App as AntApp, Button, Input, Skeleton } from 'antd'
+import { Alert, App as AntApp, Button, Input, Skeleton, Tooltip } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
-import { Icon } from '../components/Icon'
+import { FilledIcon, Icon } from '../components/Icon'
 import { StatusTag } from '../components/StatusTag'
 import {
   CountTags,
@@ -69,15 +69,11 @@ function BackLink() {
   )
 }
 
-function copyText(text: string): Promise<void> {
-  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text)
-  const area = document.createElement('textarea')
-  area.value = text
-  document.body.appendChild(area)
-  area.select()
-  document.execCommand('copy')
-  area.remove()
-  return Promise.resolve()
+/** How "Use this wording" stands for one suggestion, given the layer's current text. */
+function wordingState(finding: Numbered['finding'], layerText: string | undefined): 'none' | 'ready' | 'used' | 'changed' {
+  if (finding.fix_label !== 'Suggested wording' || !finding.quote || !finding.suggested_fix || layerText === undefined) return 'none'
+  if (layerText.includes(finding.suggested_fix)) return 'used'
+  return layerText.includes(finding.quote) ? 'ready' : 'changed'
 }
 
 function PreCheckCard({
@@ -86,18 +82,27 @@ function PreCheckCard({
   onSelect,
   onNote,
   editable,
+  layerText,
+  onUseWording,
+  onEditOnAd,
+  onResolve,
 }: {
   item: Numbered
   selected: boolean
   onSelect: () => void
   onNote: (note: string) => void
   editable: boolean
+  layerText: string | undefined
+  onUseWording: () => void
+  onEditOnAd: () => void
+  onResolve: (resolved: boolean) => void
 }) {
   const { n, finding, rule } = item
-  const { message } = AntApp.useApp()
   const [noteOpen, setNoteOpen] = useState(Boolean(finding.submitter_note))
   const [note, setNote] = useState(finding.submitter_note ?? '')
   const saved = useRef(finding.submitter_note ?? '')
+  const resolved = finding.resolved_by_submitter
+  const wording = wordingState(finding, layerText)
 
   // Notes save as you type, a moment after you stop.
   useEffect(() => {
@@ -110,37 +115,62 @@ function PreCheckCard({
   }, [note, onNote])
 
   return (
-    <article id={`finding-${n}`} data-finding={n} style={cardStyle(selected)} onClick={onSelect} aria-label={`Suggestion ${n}`}>
-      <NumberBadge n={n} selected={selected} onSelect={onSelect} />
+    <article
+      id={`finding-${n}`}
+      data-finding={n}
+      data-resolved={resolved || undefined}
+      style={{ ...cardStyle(selected), ...(resolved ? { background: '#FBFCFD' } : {}) }}
+      onClick={onSelect}
+      aria-label={`Suggestion ${n}`}
+    >
+      <NumberBadge n={n} selected={selected} onSelect={onSelect} tone={resolved ? 'resolved' : 'default'} />
       <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600 }}>{finding.text}</p>
+          {resolved && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#067647' }}>
+              <FilledIcon name="good" size={14} />
+              Resolved by you
+            </span>
+          )}
+          <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', fontWeight: 600, color: resolved ? '#4A5468' : undefined }}>{finding.text}</p>
           <RuleLine rule={rule} />
         </div>
-        {finding.suggested_fix && <FixBox label={finding.fix_label ?? 'Suggested fix'} text={finding.suggested_fix} />}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
-          {finding.suggested_fix && (
-            <button
-              type="button"
-              className="fp-copy-button"
-              onClick={async () => {
-                try {
-                  await copyText(finding.suggested_fix ?? '')
-                  message.success('Suggested fix copied')
-                } catch {
-                  message.error("Couldn't copy. Select the text instead.")
-                }
-              }}
-            >
-              Copy suggested fix
-            </button>
-          )}
-          {editable && (
+        {finding.suggested_fix && !resolved && <FixBox label={finding.fix_label ?? 'Suggested fix'} text={finding.suggested_fix} />}
+        {editable && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+            {!resolved && wording !== 'none' && (
+              <Tooltip title={wording === 'changed' ? 'The flagged words have changed on the ad. Edit it there instead.' : undefined}>
+                <button type="button" className="fp-copy-button" disabled={wording !== 'ready'} onClick={onUseWording}>
+                  {wording === 'used' ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Icon name="check" size={14} strokeWidth={2.5} />
+                      Wording used
+                    </span>
+                  ) : (
+                    'Use this wording'
+                  )}
+                </button>
+              </Tooltip>
+            )}
+            {!resolved && wording !== 'ready' && finding.layer_id && layerText !== undefined && (
+              <button type="button" className="fp-secondary fp-small-button" onClick={onEditOnAd}>
+                Edit on ad
+              </button>
+            )}
             <button type="button" className="fp-secondary fp-small-button" aria-expanded={noteOpen} onClick={() => setNoteOpen((o) => !o)}>
               Add a note
             </button>
-          )}
-        </div>
+            <button
+              type="button"
+              className={`fp-small-button ${resolved ? 'fp-secondary' : 'fp-resolve'}`}
+              style={{ marginLeft: 'auto' }}
+              aria-pressed={resolved}
+              onClick={() => onResolve(!resolved)}
+            >
+              {resolved ? 'Reopen' : 'Mark resolved'}
+            </button>
+          </div>
+        )}
         {noteOpen && (
           <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, fontWeight: 600, color: '#4A5468' }} onClick={(e) => e.stopPropagation()}>
             Note to your reviewer (optional)
@@ -200,7 +230,8 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   // Edits are marked against the copy the marketer started from.
   const [baseline] = useState<Layer[]>(() => (ad.status === 'changes_required' ? detail.current.layers : working.layers))
   const [selected, setSelected] = useState<number | null>(null)
-  const [open, setOpen] = useState({ critical: true, caution: true, good: false })
+  const [open, setOpen] = useState({ critical: true, caution: true, resolved: true, good: false })
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [checking, setChecking] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [unavailable, setUnavailable] = useState(false)
@@ -208,9 +239,19 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const textTemplate = !isImageTemplate(working.template)
   const numbered = useMemo(() => numberFindings(working.findings, rules), [working.findings, rules])
   const layerIds = useMemo(() => new Set(working.layers.map((l) => l.id)), [working.layers])
-  const markers = useMemo(() => markersFor(numbered, textTemplate, layerIds), [numbered, textTemplate, layerIds])
-  const critical = numbered.filter((x) => x.finding.severity === 'critical')
-  const caution = numbered.filter((x) => x.finding.severity === 'caution')
+  // A suggestion the marketer marked resolved shows a green pin and moves to its own group.
+  const markers = useMemo(
+    () =>
+      markersFor(numbered, textTemplate, layerIds).map((m) =>
+        numbered.find((x) => x.n === m.n)?.finding.resolved_by_submitter ? { ...m, tone: 'resolved' as const } : m,
+      ),
+    [numbered, textTemplate, layerIds],
+  )
+  const unresolved = numbered.filter((x) => !x.finding.resolved_by_submitter)
+  const resolvedItems = numbered.filter((x) => x.finding.resolved_by_submitter)
+  const critical = unresolved.filter((x) => x.finding.severity === 'critical')
+  const caution = unresolved.filter((x) => x.finding.severity === 'caution')
+  const layerText = (layerId: string | null) => (layerId ? working.layers.find((l) => l.id === layerId)?.text : undefined)
   const goodIds = working.check?.good_rule_ids ?? []
   const editedIds = useMemo(() => {
     const before = new Map(baseline.map((l) => [l.id, l.text]))
@@ -224,6 +265,29 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
       reload()
     } catch (e) {
       message.error(e instanceof ApiError ? e.message : "Couldn't save your edit. Try again.")
+    }
+  }
+
+  const applyWording = async (item: Numbered) => {
+    const { layer_id, quote, suggested_fix } = item.finding
+    const text = layerText(layer_id)
+    if (!layer_id || !quote || !suggested_fix || text === undefined || !text.includes(quote)) return
+    await saveLayer(layer_id, text.replace(quote, suggested_fix))
+    message.success('Wording used on the ad. Mark it resolved once it reads right.')
+  }
+
+  const editOnAd = (layerId: string | null) => {
+    if (!layerId) return
+    setEditingId(layerId)
+    window.setTimeout(() => document.querySelector(`[data-layer="${layerId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
+  }
+
+  const setResolved = async (findingId: number, resolved: boolean) => {
+    try {
+      await api.post(`/api/findings/${findingId}`, { action: resolved ? 'resolve' : 'reopen' })
+      reload()
+    } catch {
+      message.error("Couldn't save that. Try again.")
     }
   }
 
@@ -268,8 +332,9 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const selectFromAd = (n: number) => {
     setSelected(n)
     const item = numbered.find((x) => x.n === n)
-    if (item?.finding.severity === 'critical') setOpen((o) => ({ ...o, critical: true }))
-    if (item?.finding.severity === 'caution') setOpen((o) => ({ ...o, caution: true }))
+    if (item?.finding.resolved_by_submitter) setOpen((o) => ({ ...o, resolved: true }))
+    else if (item?.finding.severity === 'critical') setOpen((o) => ({ ...o, critical: true }))
+    else if (item?.finding.severity === 'caution') setOpen((o) => ({ ...o, caution: true }))
     revealCard(n)
   }
   const selectFromCard = (n: number) => {
@@ -297,7 +362,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
             markers={markers}
             selected={selected}
             onSelect={selectFromAd}
-            edit={editable ? { editedIds, onChange: saveLayer } : undefined}
+            edit={editable ? { editedIds, onChange: saveLayer, editingId, setEditing: setEditingId } : undefined}
           />
           {editable && (
             <p style={{ margin: 0, fontSize: 13, lineHeight: '18px', color: '#4A5468', textAlign: 'center' }}>
@@ -313,7 +378,15 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
               <h2 id="auto-suggestions" className="fp-panel-title">
                 Auto suggestions
               </h2>
-              {!checking && <CountTags critical={critical.length} caution={caution.length} good={goodIds.length} checksRun={working.check?.checks_run ?? 0} />}
+              {!checking && (
+                <CountTags
+                  critical={critical.length}
+                  caution={caution.length}
+                  good={goodIds.length}
+                  checksRun={working.check?.checks_run ?? 0}
+                  resolved={resolvedItems.length}
+                />
+              )}
             </div>
             {unavailable && <Alert type="warning" showIcon message={UNAVAILABLE} />}
             {checking ? (
@@ -323,14 +396,21 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
                 {critical.length > 0 && (
                   <Group id="critical" kind="critical" title={`Critical · ${critical.length}`} open={open.critical} onToggle={() => setOpen((o) => ({ ...o, critical: !o.critical }))}>
                     {critical.map((item) => (
-                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} />
+                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} layerText={layerText(item.finding.layer_id)} onUseWording={() => applyWording(item)} onEditOnAd={() => editOnAd(item.finding.layer_id)} onResolve={(r) => setResolved(item.finding.id, r)} />
                     ))}
                   </Group>
                 )}
                 {caution.length > 0 && (
                   <Group id="caution" kind="caution" title={`Caution · ${caution.length}`} open={open.caution} onToggle={() => setOpen((o) => ({ ...o, caution: !o.caution }))}>
                     {caution.map((item) => (
-                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} />
+                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} layerText={layerText(item.finding.layer_id)} onUseWording={() => applyWording(item)} onEditOnAd={() => editOnAd(item.finding.layer_id)} onResolve={(r) => setResolved(item.finding.id, r)} />
+                    ))}
+                  </Group>
+                )}
+                {resolvedItems.length > 0 && (
+                  <Group id="resolved" kind="resolved" title={`Resolved by you · ${resolvedItems.length}`} open={open.resolved} onToggle={() => setOpen((o) => ({ ...o, resolved: !o.resolved }))}>
+                    {resolvedItems.map((item) => (
+                      <PreCheckCard key={item.finding.id} item={item} selected={selected === item.n} onSelect={() => selectFromCard(item.n)} onNote={(note) => saveNote(item.finding.id, note)} editable={editable} layerText={layerText(item.finding.layer_id)} onUseWording={() => applyWording(item)} onEditOnAd={() => editOnAd(item.finding.layer_id)} onResolve={(r) => setResolved(item.finding.id, r)} />
                     ))}
                   </Group>
                 )}
@@ -342,7 +422,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
             {editable && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16, borderTop: '1px solid #E3E6EC', paddingTop: 20 }}>
                 <p style={{ margin: 0, fontSize: 14, lineHeight: '22px', color: '#4A5468' }}>
-                  These are suggestions, so you can submit anytime. Your reviewer sees anything still open, plus your notes.
+                  These are suggestions, so you can submit anytime. Your reviewer sees anything still open, what you marked resolved, and your notes.
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 }}>
                   <Button className="fp-footer-button" onClick={recheck} loading={checking} disabled={submitting}>

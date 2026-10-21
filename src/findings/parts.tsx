@@ -41,13 +41,26 @@ export function markersFor(numbered: Numbered[], textTemplate: boolean, layerIds
     })
 }
 
-export function CountTags({ critical, caution, good, checksRun }: { critical: number; caution: number; good: number; checksRun: number }) {
+export function CountTags({
+  critical,
+  caution,
+  good,
+  checksRun,
+  resolved = 0,
+}: {
+  critical: number
+  caution: number
+  good: number
+  checksRun: number
+  resolved?: number
+}) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
       {critical > 0 && <SeverityTag kind="critical">{critical} Critical</SeverityTag>}
       {caution > 0 && <SeverityTag kind="caution">{caution} Caution</SeverityTag>}
       {good > 0 && <SeverityTag kind="good">{good} Good</SeverityTag>}
       <span style={{ fontSize: 13, color: '#4A5468' }}>· {checksRun} checks run</span>
+      {resolved > 0 && <span style={{ fontSize: 13, color: '#4A5468' }}>· {resolved} marked resolved</span>}
     </div>
   )
 }

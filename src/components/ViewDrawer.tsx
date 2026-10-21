@@ -1,6 +1,7 @@
 import { Drawer, Skeleton } from 'antd'
 import { useSearchParams } from 'react-router-dom'
 import { AdView } from '../ads/AdView'
+import { DownloadAd } from '../ads/DownloadAd'
 import { useWorkspace } from '../app/workspace'
 import { useApi } from '../lib/useApi'
 import { dayLabel, dayPhrase } from '../lib/dates'
@@ -66,6 +67,15 @@ export function ViewDrawer() {
           </div>
 
           <AdView content={shown.current} />
+
+          {(shown.ad.status === 'approved' || shown.ad.status === 'approved_with_changes') && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+              <DownloadAd content={shown.current} name={shown.ad.name} version={shown.ad.current_version} />
+              {shown.ad.status === 'approved_with_changes' && (
+                <span style={{ fontSize: 13, lineHeight: '18px', color: '#4A5468' }}>Make the change below before it goes live.</span>
+              )}
+            </div>
+          )}
 
           {sent.length > 0 && (
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

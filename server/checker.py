@@ -36,8 +36,11 @@ For every rule the copy breaks, return one finding:
 can be quoted (for example, a missing disclosure).
 - text: one plain sentence a marketer understands: what's wrong on this ad. Don't cite regulations or \
 section numbers, and don't blame anyone.
-- fix_label: "Suggested wording" when suggested_fix is replacement copy, otherwise "Suggested fix".
-- suggested_fix: one concrete fix the marketer can apply.
+- fix_label and suggested_fix: whenever the problem can be fixed by changing the words, use \
+"Suggested wording", and make suggested_fix a drop-in replacement for quote: the exact words that would \
+stand in its place, so the layer still reads as one correct sentence once they're swapped in. Prefer this. \
+Use "Suggested fix" only when the fix isn't a word swap (size, placement, or something missing from the \
+ad), and then write one concrete instruction.
 
 List every rule the copy does not break in passed_rule_ids. Each applicable rule appears exactly once: \
 either in a finding or in passed_rule_ids. Flag only real problems; a rule with nothing to flag passes.
@@ -183,6 +186,9 @@ def validate(data: dict, rules: list[dict], layers: list[dict]) -> tuple[list[di
         seen.add(key)
         fix = str(raw.get("suggested_fix") or "").strip() or None
         label = raw.get("fix_label") if raw.get("fix_label") in ("Suggested fix", "Suggested wording") else "Suggested fix"
+        if label == "Suggested wording" and quote is None:
+            # Replacement words need words to replace; without a valid quote it's advice, not wording.
+            label = "Suggested fix"
         findings.append({
             "rule_id": rule["id"], "severity": rule["severity"], "layer_id": layer_id, "quote": quote,
             "text": text[:500], "suggested_fix": fix[:500] if fix else None, "fix_label": label if fix else None,
@@ -242,5 +248,6 @@ def _store(db: Db, version: dict, findings: list[dict], passed: list[str], check
             **finding, "ad_version_id": version["id"], "check_run_id": run_id, "origin": "auto",
             "state": before.get("state", "open"), "edited_text": before.get("edited_text"),
             "dismiss_reason": before.get("dismiss_reason"), "submitter_note": before.get("submitter_note"),
+            "resolved_by_submitter": bool(before.get("resolved_by_submitter", False)),
             "sent_to_submitter": False, "position": position, "created_at": iso(now),
         })

@@ -7,6 +7,9 @@ import { MissingChip, OutlinedSpan, UnderlinedSpan, segment, type Marker, type M
 export interface EditState {
   editedIds: Set<string>
   onChange: (layerId: string, text: string) => void
+  /** Which layer is open for editing; kept by the page so a card's "Edit on ad" can open one. */
+  editingId: string | null
+  setEditing: (layerId: string | null) => void
 }
 
 export interface AdViewProps {
@@ -101,7 +104,7 @@ function AutoTextarea({ value, onCommit, onCancel, style }: { value: string; onC
 }
 
 function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffset, prefix }: LayerProps) {
-  const [editing, setEditing] = useState(false)
+  const editing = Boolean(edit && layer && edit.editingId === layer.id)
   if (!layer) return null
   const Tag = as
   const mine = state.markers.filter((m) => m.layerId === layer.id)
@@ -113,9 +116,9 @@ function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffse
         <AutoTextarea
           value={layer.text}
           style={style ?? {}}
-          onCancel={() => setEditing(false)}
+          onCancel={() => edit.setEditing(null)}
           onCommit={(text) => {
-            setEditing(false)
+            edit.setEditing(null)
             const clean = text.replace(/\s+\n/g, '\n').trim()
             if (clean && clean !== layer.text) edit.onChange(layer.id, clean)
           }}
@@ -167,11 +170,11 @@ function LayerText({ layer, state, edit, style, kind, as = 'div', underlineOffse
   // Click the words to edit them; keyboard users get a separate Edit button, so no control sits inside another.
   return (
     <Tag style={{ ...style, position: 'relative' }} data-layer={layer.id}>
-      <span className="fp-editable" data-edited={edited || undefined} onClick={() => setEditing(true)}>
+      <span className="fp-editable" data-edited={edited || undefined} onClick={() => edit.setEditing(layer.id)}>
         {body}
         {edited && <span className="fp-edited-badge">Edited</span>}
       </span>
-      <button type="button" className="fp-edit-layer" aria-label={`Edit ${layer.role}: ${layer.text}`} onClick={() => setEditing(true)}>
+      <button type="button" className="fp-edit-layer" aria-label={`Edit ${layer.role}: ${layer.text}`} onClick={() => edit.setEditing(layer.id)}>
         Edit
       </button>
     </Tag>

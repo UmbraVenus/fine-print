@@ -251,6 +251,7 @@ def _findings(db: Db, version_id: int) -> list[dict]:
     rows = db.all("SELECT * FROM findings WHERE ad_version_id = ? ORDER BY origin, position, id", (version_id,))
     for row in rows:
         row["sent_to_submitter"] = bool(row["sent_to_submitter"])
+        row["resolved_by_submitter"] = bool(row["resolved_by_submitter"])
     return rows
 
 

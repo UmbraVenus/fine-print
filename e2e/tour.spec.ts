@@ -33,11 +33,12 @@ test('README tour', async ({ page }) => {
 
   // 5. Fix it and resubmit.
   await page.goto('/ads/3/pre-check')
-  await page.locator('[data-layer="headline"] .fp-editable').click()
-  const editor = page.getByRole('textbox', { name: 'Edit text' })
-  await editor.fill('Personal loans from 7.99% to 29.99% APR with autopay')
-  await editor.press('Enter')
+  const rate = page.locator('article', { hasText: 'The rate claim is missing the full APR range' })
+  await rate.getByRole('button', { name: 'Use this wording' }).click()
+  await expect(page.locator('[data-layer="headline"]')).toContainText('from 7.99% to 29.99% APR with autopay')
   await expect(page.locator('.fp-edited-badge')).toBeVisible()
+  await rate.getByRole('button', { name: 'Mark resolved' }).click()
+  await expect(page.getByRole('button', { name: /Resolved by you · 1/ })).toBeVisible()
   await page.getByRole('button', { name: 'Submit' }).click()
   await expect(page).toHaveURL(/\/my-ads$/)
 
@@ -56,6 +57,7 @@ test('README tour', async ({ page }) => {
   await expect(page.locator('.fp-ad-link')).toHaveText(['Fall personal loan'])
   await page.getByRole('button', { name: 'Fall personal loan' }).click()
   await expect(page.getByRole('dialog').getByText('You approved')).toBeVisible()
+  await expect(page.getByRole('dialog').getByRole('button', { name: 'Download ad' })).toBeVisible()
   await page.keyboard.press('Escape')
 
   // 8. Add a rule and Re-check.

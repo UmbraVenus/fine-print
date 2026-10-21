@@ -1,6 +1,6 @@
 import { Button, Input, Modal } from 'antd'
 import { useState } from 'react'
-import { Icon } from '../components/Icon'
+import { FilledIcon, Icon } from '../components/Icon'
 import type { Rule } from '../lib/detail'
 import { FixBox, NoteBox, NumberBadge, RuleLine, cardStyle, type Numbered } from '../findings/parts'
 
@@ -84,6 +84,12 @@ export function ReviewSuggestionCard({
           )}
           <RuleLine rule={rule} />
         </div>
+        {finding.resolved_by_submitter && (
+          <div className="fp-resolved-note">
+            <FilledIcon name="good" size={14} />
+            The submitter marked this resolved. Check it on the ad.
+          </div>
+        )}
         {finding.submitter_note && <NoteBox label="Note from submitter" text={finding.submitter_note} />}
         {finding.suggested_fix && <FixBox label={finding.fix_label ?? 'Suggested fix'} text={finding.suggested_fix} />}
         {!readOnly && (
