@@ -131,6 +131,12 @@ const STROKE: Record<string, ReactNode> = {
       <path d="M5 21h14" />
     </>
   ),
+  swap: (
+    <>
+      <path d="M4 8h15M15 4l4 4-4 4" />
+      <path d="M20 16H5M9 12l-4 4 4 4" />
+    </>
+  ),
   copy: (
     <>
       <rect x="9" y="9" width="12" height="12" rx="2" />

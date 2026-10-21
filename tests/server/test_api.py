@@ -35,3 +35,26 @@ def test_list_endpoint():
     filtered = client.get("/api/ads?view=queue&format=Email&format=Blog%20post").get_json()
     assert filtered["total"] == 3
     assert client.get("/api/ads?view=nope").status_code == 400
+
+
+def test_a_half_finished_migration_is_finished_on_the_next_start(tmp_path):
+    from server.db import Db, connect, migrate
+
+    db = Db(connect(f"file:{tmp_path / 'half.db'}"))
+    migrate(db)
+    # An earlier run added the column but never recorded the migration.
+    db.run("DELETE FROM schema_migrations WHERE name = '0002_resolved_by_submitter.sql'")
+    db.commit()
+    migrate(db)
+    assert db.one("SELECT name FROM schema_migrations WHERE name = '0002_resolved_by_submitter.sql'")
+
+
+def test_first_requests_arriving_together_all_succeed(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    app = create_app(f"file:{tmp_path / 'race.db'}")
+    client = app.test_client()
+    with ThreadPoolExecutor(6) as pool:
+        codes = list(pool.map(lambda path: client.get(path).status_code,
+                              ["/api/nav", "/api/ads?view=queue", "/api/nav", "/api/rules", "/api/nav", "/api/ads?view=history"]))
+    assert codes == [200] * 6

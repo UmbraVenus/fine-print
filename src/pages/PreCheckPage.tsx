@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
 import { FilledIcon, Icon } from '../components/Icon'
+import { Pager } from '../components/Pager'
 import { StatusTag } from '../components/StatusTag'
 import {
   CountTags,
@@ -69,7 +70,7 @@ function BackLink() {
   )
 }
 
-/** How "Use this wording" stands for one suggestion, given the layer's current text. */
+/** How Swap stands for one suggestion, given the layer's current text. */
 function wordingState(finding: Numbered['finding'], layerText: string | undefined): 'none' | 'ready' | 'used' | 'changed' {
   if (finding.fix_label !== 'Suggested wording' || !finding.quote || !finding.suggested_fix || layerText === undefined) return 'none'
   if (layerText.includes(finding.suggested_fix)) return 'used'
@@ -136,39 +137,47 @@ function PreCheckCard({
           <RuleLine rule={rule} />
         </div>
         {finding.suggested_fix && !resolved && (
-          <FixBox label={finding.fix_label ?? 'Suggested wording'} text={finding.suggested_fix}>
-            {editable && wording !== 'none' && (
-              <Tooltip title={wording === 'changed' ? 'The flagged words have changed on the ad. Edit it there instead.' : undefined}>
-                <button
-                  type="button"
-                  className="fp-copy-button"
-                  disabled={wording !== 'ready'}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onUseWording()
-                  }}
+          <FixBox
+            label={finding.fix_label ?? 'Suggested wording'}
+            text={finding.suggested_fix}
+            action={
+              editable &&
+              wording !== 'none' && (
+                <Tooltip
+                  title={
+                    wording === 'changed'
+                      ? 'The flagged words have changed on the ad. Edit it there instead.'
+                      : wording === 'used'
+                        ? 'Swapped in on the ad'
+                        : 'Swap it in on the ad'
+                  }
                 >
-                  {wording === 'used' ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <Icon name="check" size={14} strokeWidth={2.5} />
-                      Wording used
-                    </span>
-                  ) : (
-                    'Use this wording'
-                  )}
-                </button>
-              </Tooltip>
-            )}
-          </FixBox>
+                  <button
+                    type="button"
+                    className="fp-swap"
+                    aria-label={wording === 'used' ? 'Swapped' : 'Swap the flagged words for this wording'}
+                    disabled={wording !== 'ready'}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onUseWording()
+                    }}
+                  >
+                    <Icon name={wording === 'used' ? 'check' : 'swap'} size={14} strokeWidth={wording === 'used' ? 2.5 : 2} />
+                    {wording === 'used' ? 'Swapped' : 'Swap'}
+                  </button>
+                </Tooltip>
+              )
+            }
+          />
         )}
         {editable && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4, margin: '2px 0 0 -8px', paddingRight: 8 }} onClick={(e) => e.stopPropagation()}>
             {!resolved && finding.layer_id && layerText !== undefined && (
-              <button type="button" className="fp-secondary fp-small-button" onClick={onEditOnAd}>
+              <button type="button" className="fp-quiet fp-small-button fp-card-link" onClick={onEditOnAd}>
                 Edit on ad
               </button>
             )}
-            <button type="button" className="fp-secondary fp-small-button" aria-expanded={noteOpen} onClick={() => setNoteOpen((o) => !o)}>
+            <button type="button" className="fp-quiet fp-small-button fp-card-link" aria-expanded={noteOpen} onClick={() => setNoteOpen((o) => !o)}>
               Add a note
             </button>
             <button
@@ -284,7 +293,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     const text = layerText(layer_id)
     if (!layer_id || !quote || !suggested_fix || text === undefined || !text.includes(quote)) return
     await saveLayer(layer_id, text.replace(quote, suggested_fix))
-    message.success('Wording used on the ad. Mark it resolved once it reads right.')
+    message.success('Swapped in on the ad. Mark it resolved once it reads right.')
   }
 
   const editOnAd = (layerId: string | null) => {
@@ -355,15 +364,20 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
 
   return (
     <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <BackLink />
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
-          <h1 className="fp-page-title">{ad.name}</h1>
-          <StatusTag status={ad.status} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <BackLink />
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+            <h1 className="fp-page-title">{ad.name}</h1>
+            <StatusTag status={ad.status} />
+          </div>
+          <span style={{ fontSize: 14, lineHeight: '20px', color: '#4A5468' }}>
+            {ad.format} · {PRODUCT_LABEL[ad.product]}
+          </span>
         </div>
-        <span style={{ fontSize: 14, lineHeight: '20px', color: '#4A5468' }}>
-          {ad.format} · {PRODUCT_LABEL[ad.product]}
-        </span>
+        {detail.attention && (
+          <Pager at={detail.attention} label="Ads that need your attention" href={(id) => `/ads/${id}/pre-check`} />
+        )}
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>

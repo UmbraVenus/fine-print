@@ -152,8 +152,8 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-/** The words to use, a button that copies exactly them, and any action that puts them on the ad. */
-export function FixBox({ label, text, children }: { label: string; text: string; children?: ReactNode }) {
+/** The words to use, with a button that copies exactly them and any action that puts them on the ad. */
+export function FixBox({ label, text, action }: { label: string; text: string; action?: ReactNode }) {
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (!copied) return
@@ -170,22 +170,23 @@ export function FixBox({ label, text, children }: { label: string; text: string;
         background: '#D5EEE8',
         borderLeft: '3px solid #0F766E',
         borderRadius: 6,
-        padding: '10px 6px 10px 13px',
+        padding: '8px 8px 10px 13px',
         display: 'flex',
-        alignItems: 'flex-start',
-        gap: 8,
+        flexDirection: 'column',
+        gap: 2,
       }}
     >
-      <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <span style={{ fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#115E59' }}>{label}</span>
-        <span style={{ fontSize: 14, lineHeight: '22px', fontWeight: 500 }}>{text}</span>
-        {children && <div style={{ display: 'flex', marginTop: 8 }}>{children}</div>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, minHeight: 28 }}>
+        <span style={{ flexGrow: 1, fontSize: 12, lineHeight: '16px', fontWeight: 700, color: '#115E59' }}>{label}</span>
+        <Tooltip title={copied ? 'Copied' : 'Copy'}>
+          <button type="button" className="fp-fix-copy" aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`} onClick={copy}>
+            <Icon name={copied ? 'check' : 'copy'} size={16} strokeWidth={copied ? 2.5 : 2} />
+          </button>
+        </Tooltip>
+        {/* Last, at the right edge, in line with Mark resolved below the box. */}
+        {action}
       </div>
-      <Tooltip title={copied ? 'Copied' : 'Copy'}>
-        <button type="button" className="fp-fix-copy" aria-label={copied ? 'Copied' : `Copy ${label.toLowerCase()}`} onClick={copy}>
-          <Icon name={copied ? 'check' : 'copy'} size={16} strokeWidth={copied ? 2.5 : 2} />
-        </button>
-      </Tooltip>
+      <span style={{ fontSize: 14, lineHeight: '22px', fontWeight: 500, paddingRight: 4 }}>{text}</span>
       <span className="fp-visually-hidden" aria-live="polite">
         {copied ? 'Copied' : ''}
       </span>

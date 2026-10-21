@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await resetData(page)
 })
 
-test('pre-check: use the wording, edit on ad, mark resolved, a note, and no-key re-check', async ({ page }) => {
+test('pre-check: swap the wording, copy it, edit on ad, mark resolved, a note, and no-key re-check', async ({ page }) => {
   await setRole(page, 'marketer')
   await page.goto('/ads/1/pre-check')
   await expect(page.getByRole('heading', { level: 1, name: 'Cash back card' })).toBeVisible()
@@ -15,17 +15,21 @@ test('pre-check: use the wording, edit on ad, mark resolved, a note, and no-key 
   await expect(page.getByRole('button', { name: /Critical · 1/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /Good · 4/ })).toHaveAttribute('aria-expanded', 'false')
   await expect(page.getByRole('button', { name: 'Copy suggested fix' })).toHaveCount(0)
+  // The box holds only the words, and Copy copies exactly them.
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.locator('[data-finding="1"]').getByRole('button', { name: 'Copy suggested wording' }).click()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('No annual fee. 21.24%–29.24% variable APR.')
   await page.screenshot({ path: 'screenshots/m5-pre-check.png', fullPage: true })
 
-  // 1. "Use this wording" swaps the flagged words on the ad, in place.
+  // 1. Swap puts the suggested words in place of the flagged ones, on the ad.
   const first = page.locator('[data-finding="1"]')
-  await first.getByRole('button', { name: 'Use this wording' }).click()
-  await expect(page.getByText('Wording used on the ad.', { exact: false })).toBeVisible()
+  await first.getByRole('button', { name: 'Swap the flagged words for this wording' }).click()
+  await expect(page.getByText('Swapped in on the ad.', { exact: false })).toBeVisible()
   await expect(page.locator('[data-layer="headline"]')).toContainText('21.24%–29.24% variable APR.')
-  await expect(first.getByRole('button', { name: 'Wording used' })).toBeDisabled()
+  await expect(first.getByRole('button', { name: 'Swapped' })).toBeDisabled()
   await expect(page.locator('[data-layer="headline"] .fp-edited-badge')).toHaveText('Edited')
 
-  // 2. "Edit on ad" opens that text for editing (shown once the wording's been used).
+  // 2. "Edit on ad" opens that text for editing.
   await first.getByRole('button', { name: 'Edit on ad' }).click()
   const editor = page.getByRole('textbox', { name: 'Edit text' })
   await expect(editor).toBeFocused()
@@ -139,4 +143,23 @@ test('full loop: fix, resubmit, what changed, approve, history', async ({ page }
   await setRole(page, 'marketer')
   await page.goto('/my-ads')
   await expect(page.locator('tr', { hasText: 'Holiday debt email' }).getByText('Approved', { exact: true })).toBeVisible()
+})
+
+test('Pre-check steps through the ads that need attention, like Review steps through the queue', async ({ page }) => {
+  await setRole(page, 'marketer')
+  // The same order as My ads: the rows with a Pre-check button, most recently updated first.
+  await page.goto('/my-ads')
+  const rows = page.locator('tbody tr', { has: page.getByRole('link', { name: /^Pre-check / }) })
+  await expect(rows).toHaveCount(2)
+  const [firstName, secondName] = await Promise.all([0, 1].map((i) => rows.nth(i).locator('.fp-ad-link').innerText()))
+  const href = await rows.first().getByRole('link', { name: /^Pre-check / }).getAttribute('href')
+
+  await page.goto(href!)
+  const pager = page.getByRole('navigation', { name: 'Ads that need your attention' })
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(firstName)
+  await expect(pager).toContainText('1 of 2')
+  await pager.getByRole('link', { name: 'Next' }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(secondName)
+  await expect(pager).toContainText('2 of 2')
+  await expect(pager.getByText('Next')).toHaveAttribute('aria-disabled', 'true')
 })

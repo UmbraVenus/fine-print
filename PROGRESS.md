@@ -39,8 +39,11 @@
 - Pre-check: "Use this wording", "Edit on ad" and a manual "Mark resolved", which the reviewer sees. Download ad (PNG) for approved ads. See BLOCKED.md.
   - Checks: `e2e/loop.spec.ts` (use the wording, edit on ad, mark resolved and reopen, the reviewer sees it, PNG download at full size) and new server tests (resolve and reopen, drop-in wording, the resolved mark kept through a live Re-check).
 - Headlines shrink to fit around the art (down to 60%), measured on the real layout, so longer wording never runs into a shape. If shrinking isn't enough, the shape is hidden: words win over decoration. History filler art moved to the bottom-right corner; the circle over Fixed rate Instagram's copy is gone. Checked on 161 social ads: none needed to shrink or hide.
-- Suggested fixes are only the words to use, with a copy button in the box. "Use this wording" sits under the words when they're a drop-in swap; "Edit on ad" is on every card tied to a layer. The live check returns words only and forgives near-miss quotes (curly quotes, dashes, case).
+- Suggested fixes are only the words to use, with a copy button in the box. "Swap" (renamed from "Use this wording") sits at the right of the box, after Copy and in line with Mark resolved, when the words are a drop-in replacement; "Edit on ad" and "Add a note" are quiet text buttons on every card, so each card has one clear button in the box and one in the row. The live check returns words only and forgives near-miss quotes (curly quotes, dashes, case).
 - "approved on first review" trend tooltip reads "vs. 45% last month", so "12 pts" (percentage points) explains itself.
+- Fixed: two first requests arriving together could both run a new migration ("duplicate column name"), and a half-finished one failed on every restart. Setup now runs one request at a time, and a column that's already there is skipped.
+- The error page has "Back to Queue" (or My ads), and shows the error itself when running locally.
+- Pre-check has Previous / "1 of 2" / Next, like Review: it steps through the marketer's ads that need attention (Draft and Changes required), in My ads order.
 
 ## Ideas, not built
 

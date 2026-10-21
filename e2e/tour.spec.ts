@@ -34,7 +34,7 @@ test('README tour', async ({ page }) => {
   // 5. Fix it and resubmit.
   await page.goto('/ads/3/pre-check')
   const rate = page.locator('article', { hasText: 'The rate claim is missing the full APR range' })
-  await rate.getByRole('button', { name: 'Use this wording' }).click()
+  await rate.getByRole('button', { name: 'Swap the flagged words for this wording' }).click()
   await expect(page.locator('[data-layer="headline"]')).toContainText('from 7.99% to 29.99% APR with autopay')
   await expect(page.locator('.fp-edited-badge')).toBeVisible()
   await rate.getByRole('button', { name: 'Mark resolved' }).click()

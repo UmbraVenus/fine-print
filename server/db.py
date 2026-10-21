@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -87,6 +88,9 @@ def _encode(value: Any) -> Any:
     return value
 
 
+_ADD_COLUMN = re.compile(r"ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)", re.IGNORECASE)
+
+
 def migrate(db: Db) -> None:
     db.run("CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY)")
     done = {r["name"] for r in db.all("SELECT name FROM schema_migrations")}
@@ -94,9 +98,19 @@ def migrate(db: Db) -> None:
         if path.name in done:
             continue
         for statement in _statements(path.read_text()):
-            db.run(statement)
+            if not _already_applied(db, statement):
+                db.run(statement)
         db.run("INSERT INTO schema_migrations (name) VALUES (?)", (path.name,))
-    db.commit()
+        db.commit()
+
+
+def _already_applied(db: Db, statement: str) -> bool:
+    """A column added by an earlier, half-finished run is there already; adding it again would fail."""
+    match = _ADD_COLUMN.match(statement)
+    if not match:
+        return False
+    table, column = match.groups()
+    return any(r["name"] == column for r in db.all(f"PRAGMA table_info({table})"))
 
 
 def _statements(sql: str) -> list[str]:

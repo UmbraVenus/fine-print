@@ -107,6 +107,22 @@ def queue_order(db: Db) -> list[int]:
                                      "ORDER BY due_date ASC, name COLLATE NOCASE ASC, id")]
 
 
+def attention_order(db: Db) -> list[int]:
+    """The marketer's to-do list (drafts and ads that need changes), in My ads order."""
+    return [r["id"] for r in db.all("SELECT id FROM ads WHERE is_mine = 1 AND status IN ('draft', 'changes_required') "
+                                     "ORDER BY updated_at DESC, id DESC")]
+
+
+def _position(order: list[int], ad_id: int) -> dict:
+    index = order.index(ad_id)
+    return {
+        "position": index + 1,
+        "total": len(order),
+        "previous": order[index - 1] if index > 0 else None,
+        "next": order[index + 1] if index + 1 < len(order) else None,
+    }
+
+
 def pending_count(db: Db) -> int:
     return db.scalar("SELECT COUNT(*) FROM ads WHERE status = 'pending'")
 
@@ -292,14 +308,11 @@ def ad_detail(db: Db, ad_id: int) -> dict | None:
         "events": events,
         "rules": rules(db),
         "queue": None,
+        "attention": None,
     }
     if ad["status"] == "pending":
-        order = queue_order(db)
-        index = order.index(ad_id)
-        detail["queue"] = {
-            "position": index + 1,
-            "total": len(order),
-            "previous": order[index - 1] if index > 0 else None,
-            "next": order[index + 1] if index + 1 < len(order) else None,
-        }
+        detail["queue"] = _position(queue_order(db), ad_id)
+    attention = attention_order(db)
+    if ad_id in attention:
+        detail["attention"] = _position(attention, ad_id)
     return detail

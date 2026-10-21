@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from typing import Any, Callable
 
 from flask import Flask, g, jsonify, request
@@ -17,6 +18,7 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     app.config["DATABASE_URL"] = database_url
     app.config["CLOCK"] = clock
     state: dict[str, Any] = {"migrated": False, "memory": None}
+    setup_lock = threading.Lock()
 
     def get_db() -> Db:
         if "db" not in g:
@@ -28,10 +30,12 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
                 g.db = state["memory"]
             else:
                 g.db = Db(connect(url))
-            if not state["migrated"]:
-                migrate(g.db)
-                state["migrated"] = True
-            ensure_seeded(g.db, now())
+            # The first requests arrive together; one at a time migrates and seeds.
+            with setup_lock:
+                if not state["migrated"]:
+                    migrate(g.db)
+                    state["migrated"] = True
+                ensure_seeded(g.db, now())
         return g.db
 
     def now():

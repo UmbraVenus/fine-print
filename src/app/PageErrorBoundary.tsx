@@ -10,6 +10,11 @@ function isChunkError(error: Error): boolean {
   )
 }
 
+/** The role's home, read from the role cookie so it works even when the app itself didn't load. */
+function roleHome(): { path: string; label: string } {
+  return /(?:^|;\s*)fp_role=marketer/.test(document.cookie) ? { path: '/my-ads', label: 'My ads' } : { path: '/queue', label: 'Queue' }
+}
+
 interface State {
   error: Error | null
 }
@@ -38,15 +43,24 @@ export class PageErrorBoundary extends Component<{ children: ReactNode }, State>
 
   render() {
     if (!this.state.error) return this.props.children
+    const home = roleHome()
     return (
       <div role="alert" className="fp-card" style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
         <h1 className="fp-page-title" style={{ fontSize: 22, lineHeight: '30px' }}>
           This page didn't load
         </h1>
         <p style={{ margin: 0, fontSize: 15, color: '#4A5468' }}>Reloading usually fixes it. Your work is saved.</p>
-        <Button type="primary" onClick={() => window.location.reload()}>
-          Reload the page
-        </Button>
+        {import.meta.env.DEV && (
+          <pre style={{ margin: 0, maxWidth: 640, whiteSpace: 'pre-wrap', textAlign: 'left', fontSize: 12, color: '#B42318' }}>
+            {this.state.error.message}
+          </pre>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button href={home.path}>Back to {home.label}</Button>
+          <Button type="primary" onClick={() => window.location.reload()}>
+            Reload the page
+          </Button>
+        </div>
       </div>
     )
   }

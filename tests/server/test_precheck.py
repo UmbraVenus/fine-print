@@ -106,3 +106,16 @@ def test_seeded_wording_reads_correctly_in_place():
                     # Only the words to use; the finding's own text already says what to change.
                     assert f["fix_label"] == "Suggested wording"
                     assert f["suggested_fix"].split()[0] not in {"Add", "Put", "Move", "Remove", "Make", "Show"}, f["suggested_fix"]
+
+
+def test_precheck_steps_through_the_ads_that_need_attention(db):
+    first, second = repo.attention_order(db)
+    assert {first, second} == {1, 2}  # Cash back card (Draft) and Holiday debt email (Changes required)
+    one = repo.ad_detail(db, first)["attention"]
+    assert one == {"position": 1, "total": 2, "previous": None, "next": second}
+    assert repo.ad_detail(db, second)["attention"]["previous"] == first
+    # In My ads order: most recently updated first.
+    rows = repo.list_ads(db, "my-ads")["rows"]
+    listed = [r["id"] for r in rows if r["status"] in ("draft", "changes_required")]
+    assert listed == [first, second]
+    assert repo.ad_detail(db, 3)["attention"] is None

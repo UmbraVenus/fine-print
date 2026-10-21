@@ -46,3 +46,4 @@ The data model's `applies_to` allows products and/or "affiliate", but the 10-Add
 - **No uploads**, on purpose (see the README's What's next).
 - **Suggested fixes are words only.** The finding's sentence already says what's wrong, so the box holds just the words to use, with a copy button. Fixes that aren't about words (the tiny disclosure on Fall personal loan) show no box. This changes two wireframe lines: 05-Review's "Put the disclosure right under the rate, at a readable size." is gone, and 07-OtherFormats' "Add at the top: “…”" is now just the quoted sentence.
 - **Art never covers copy.** Decorative shapes that the copy can't avoid by shrinking the headline are hidden.
+- **"Use this wording" is now "Swap"**, an icon and a word at the right of the suggested wording's header, after Copy, in line with Mark resolved below. It turns into "Swapped" once used.

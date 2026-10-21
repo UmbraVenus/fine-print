@@ -92,7 +92,10 @@ export interface AdDetail {
   draft: Version | null
   events: AdEvent[]
   rules: Rule[]
-  queue: { position: number; total: number; previous: number | null; next: number | null } | null
+  /** Where the ad sits in the Queue (pending ads), for Review's Previous / Next. */
+  queue: ListPosition | null
+  /** Where it sits in the marketer's to-do list (drafts and changes required), for Pre-check's Previous / Next. */
+  attention: ListPosition | null
 }
 
 const DECISION_WORDS: Record<string, string> = {
@@ -138,4 +141,11 @@ export function activityText(event: AdEvent, viewer: Role): string {
 export function sentText(finding: Finding): string {
   if (finding.state === 'edited' && finding.edited_text) return finding.edited_text
   return finding.text
+}
+
+export interface ListPosition {
+  position: number
+  total: number
+  previous: number | null
+  next: number | null
 }

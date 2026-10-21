@@ -763,6 +763,35 @@ a.fp-pager:hover {
 .fp-copy-button:hover {
   background: var(--fp-primary-soft);
 }
+.fp-swap {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #115e59;
+  background: #ffffff;
+  border: 1px solid var(--fp-primary);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.fp-swap:hover {
+  background: var(--fp-primary-soft);
+}
+.fp-swap:disabled {
+  cursor: default;
+  color: var(--fp-ink-muted);
+  border-color: var(--fp-line);
+  background: #ffffff;
+}
+.fp-card-link {
+  color: var(--fp-ink);
+  padding: 7px 8px;
+}
 .fp-fix-copy {
   flex-shrink: 0;
   width: 32px;

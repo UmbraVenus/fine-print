@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
 import { Icon } from '../components/Icon'
+import { Pager } from '../components/Pager'
 import { StatusTag, Tag } from '../components/StatusTag'
 import { CountTags, GoodList, Group, markersFor, numberFindings, revealCard, revealPin } from '../findings/parts'
 import { api, ApiError } from '../lib/api'
@@ -266,35 +267,7 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
             <span style={{ fontSize: 13, lineHeight: '18px', color: '#4A5468' }}>{meta.join(' · ')}</span>
           </div>
         </div>
-        {detail.queue && (
-          <nav aria-label="Queue position" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {detail.queue.previous ? (
-              <Link className="fp-pager" to={`/review/${detail.queue.previous}`}>
-                <Icon name="chevronLeft" size={16} />
-                Previous
-              </Link>
-            ) : (
-              <span className="fp-pager" aria-disabled="true">
-                <Icon name="chevronLeft" size={16} />
-                Previous
-              </span>
-            )}
-            <span style={{ fontSize: 13, color: '#4A5468' }}>
-              {detail.queue.position} of {detail.queue.total}
-            </span>
-            {detail.queue.next ? (
-              <Link className="fp-pager" to={`/review/${detail.queue.next}`}>
-                Next
-                <Icon name="chevronRight" size={16} />
-              </Link>
-            ) : (
-              <span className="fp-pager" aria-disabled="true">
-                Next
-                <Icon name="chevronRight" size={16} />
-              </span>
-            )}
-          </nav>
-        )}
+        {detail.queue && <Pager at={detail.queue} label="Queue position" href={(id) => `/review/${id}`} />}
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
