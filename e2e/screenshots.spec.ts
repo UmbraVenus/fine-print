@@ -9,6 +9,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 async function shoot(page: Page, name: string) {
+  await page.mouse.move(0, 0)
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(300)
   // Grow the window to the page, so the sticky decision bar sits at the very bottom like the wireframes.
@@ -34,6 +35,7 @@ test('01 my ads, 02 view drawer, 03 pre-check', async ({ page }) => {
   await page.keyboard.press('Escape')
   await page.goto('/my-ads?view=12')
   await expect(page.getByText('BEFORE IT GOES LIVE')).toBeVisible()
+  await page.waitForTimeout(800)
   await page.screenshot({ path: 'screenshots/final/02-view-drawer.png' })
   await page.goto('/ads/1/pre-check')
   await expect(page.getByText('Auto suggestions')).toBeVisible()
