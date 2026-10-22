@@ -70,19 +70,19 @@ The sample data loads on first visit. **Reset sample data** (sidebar, bottom) st
 
 Checks: `npm run lint`, `npm run build`, `npm test` (unit and server), `npm run test:e2e` (browser).
 
-## Deploy (Vercel + Turso)
+## Deploy (Vercel)
 
-1. **Database:** at [turso.tech](https://turso.tech), create a database, then copy its URL (`libsql://…`) and create a token.
-2. **Vercel:** import this repo. Add these variables for Production and Preview, then redeploy:
+1. Import this repo into Vercel.
+2. Add these variables (Production and Preview), then redeploy:
 
    | Variable | Value |
    | --- | --- |
-   | `DATABASE_URL` | Turso URL |
-   | `DATABASE_AUTH_TOKEN` | Turso token |
-   | `ANTHROPIC_API_KEY` | For live checks (optional) |
    | `ACCESS_KEY` | Any long random value. The site then only opens from `https://<your-app>/?key=<ACCESS_KEY>`. |
+   | `ANTHROPIC_API_KEY` | For live checks (optional) |
 
-3. **Open the link.** The first visit creates the tables and the sample data.
+3. Open the link. The sample data builds itself in under a second.
+
+The database is SQLite inside the function, so every query is instant. It starts fresh when Vercel restarts the function, the same as **Reset sample data**.
 
 Optional: `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), and `LIVE_CHECKS_PER_MINUTE` / `LIVE_CHECKS_PER_DAY` (default 10 per visitor, 200 total) to cap API spend.
 

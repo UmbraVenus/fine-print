@@ -15,6 +15,10 @@ MIGRATIONS = Path(__file__).parent / "migrations"
 
 
 def database_url() -> str:
+    # On Vercel, a SQLite file in the function's /tmp, seeded on first use: every query runs in-process.
+    # (A remote database made each query a slow network call.) Data lasts while the function stays warm.
+    if os.environ.get("VERCEL"):
+        return "file:/tmp/fine-print.db"
     return os.environ.get("DATABASE_URL") or "file:./local.db"
 
 
