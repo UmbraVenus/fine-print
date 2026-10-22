@@ -242,6 +242,13 @@ function Footer({
   )
 }
 
+/** The URL a table asks for when it opens, so another page can preload it. */
+export function firstUrl(view: TableView): string {
+  if (view !== 'history') return `/api/ads${query({ view, page_size: LOCAL_LIMIT })}`
+  const config = VIEWS[view]
+  return `/api/ads${query({ view, sort: config.defaultSort ?? 'date', order: config.defaultOrder, page: 1, page_size: 10 })}`
+}
+
 export function AdTable({
   view,
   onStats,
@@ -280,7 +287,11 @@ export function AdTable({
     page,
     page_size: pageSize,
   })
-  const { latest: loaded, error, loading } = useApi<AdList>(`/api/ads${params}`, version, !local)
+  // Every table is cached: a page seen before shows at once and refreshes in the background.
+  // The spinner is for waits the person caused (a filter, a page). Refreshes when they come back
+  // to the tab happen quietly, with the rows they're looking at kept on screen.
+  const { latest: loaded, error, loading, stale } = useApi<AdList>(`/api/ads${params}`, version, true)
+  const waiting = loading && (!loaded || stale)
   const data = useMemo(() => {
     if (!loaded || !local) return loaded
     const shown = applyLocal(loaded.rows, {
@@ -289,6 +300,13 @@ export function AdTable({
     })
     return { ...loaded, ...shown }
   }, [loaded, local, view, q, filters, today, sort, page, pageSize])
+
+  // Preload the role's other table, so switching to it is instant too.
+  useEffect(() => {
+    if (!loaded) return
+    const others: TableView[] = role === 'reviewer' ? ['queue', 'history'] : ['my-ads']
+    others.filter((v) => v !== view).forEach((v) => prefetch(firstUrl(v), version))
+  }, [loaded, role, view, version])
 
   useEffect(() => {
     if (local || !data || page * pageSize >= data.total) return
@@ -507,7 +525,7 @@ export function AdTable({
         rowKey="id"
         columns={columns}
         dataSource={data?.rows ?? []}
-        loading={loading}
+        loading={waiting}
         pagination={false}
         onChange={onChange}
         locale={{ emptyText: loading && !data ? ' ' : <div className="fp-table-empty">{empty}</div> }}

@@ -25,7 +25,7 @@ export function prefetch(url: string, version = 0) {
 export function useApi<T>(url: string | null, version = 0, cached = false) {
   const key = `${url}#${version}`
   const [result, setResult] = useState<Result<T> | null>(null)
-  const [last, setLast] = useState<T | undefined>(undefined)
+  const [last, setLast] = useState<{ url: string; data: T } | undefined>(undefined)
 
   useEffect(() => {
     if (!url) return
@@ -35,7 +35,7 @@ export function useApi<T>(url: string | null, version = 0, cached = false) {
       .then((data) => {
         if (cancelled) return
         setResult({ key, data })
-        setLast(data)
+        setLast({ url, data })
         if (cached) cache.set(key, data)
       })
       .catch((error: unknown) => !cancelled && setResult({ key, error }))
@@ -49,7 +49,9 @@ export function useApi<T>(url: string | null, version = 0, cached = false) {
   return {
     data: current?.data,
     /** The newest data we have, even if it's for an older URL. */
-    latest: current?.data ?? last,
+    latest: current?.data ?? last?.data,
+    /** True while the newest data on screen is for a different URL (not just an older version). */
+    stale: !current && last?.url !== url,
     error: current?.error,
     loading: Boolean(url) && !current,
   }
