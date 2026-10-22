@@ -1,4 +1,4 @@
-import { Alert, App as AntApp, Button, Input, Skeleton, Tooltip } from 'antd'
+import { Alert, App as AntApp, Button, Input, Skeleton, Spin, Tooltip } from 'antd'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
@@ -589,7 +589,13 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
             </div>
             {unavailable && <Alert type="warning" showIcon message={UNAVAILABLE} />}
             {checking ? (
-              <Skeleton active paragraph={{ rows: 6 }} />
+              <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, lineHeight: '20px', fontWeight: 600, color: '#115E59' }}>
+                  <Spin size="small" />
+                  Thinking… this can take up to 30 seconds.
+                </span>
+                <Skeleton active paragraph={{ rows: 6 }} />
+              </div>
             ) : (
               <>
                 {critical.length > 0 && (
@@ -625,7 +631,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 }}>
                   <Button className="fp-footer-button" onClick={recheck} loading={checking} disabled={submitting}>
-                    {checking ? 'Checking…' : 'Re-check'}
+                    {checking ? 'Thinking…' : 'Re-check'}
                   </Button>
                   <Button type="primary" className="fp-footer-button fp-footer-primary" onClick={submit} loading={submitting} disabled={checking}>
                     Submit

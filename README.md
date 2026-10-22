@@ -17,10 +17,10 @@ Every ad arrives with its suggestions pinned on the words, grouped by severity. 
 
 ![Prepared review](docs/gifs/01-review.gif)
 
-### 2. Fix it in one click
-The marketer sees what the reviewer kept, at the top. **Swap** puts in the suggested wording, or a readable size, and marks it resolved.
+### 2. Pre-check before submitting
+Marketers run the same auto check on their own ad before a reviewer sees it. Each suggestion is pinned on the words, with the wording to use instead. **Swap** puts it in (or a readable size) and marks it resolved. Click any text on the ad to edit it, then **Re-check**. Suggestions never block Submit. When an ad comes back, what the reviewer kept sits at the top.
 
-![Fix in one click](docs/gifs/02-pre-check.gif)
+![Pre-check](docs/gifs/02-pre-check.gif)
 
 ### 3. Only what changed
 A resubmission shows the old version above the new one, with what got fixed in green.
@@ -78,14 +78,17 @@ Checks: `npm run lint`, `npm run build`, `npm test` (unit and server), `npm run 
    | Variable | Value |
    | --- | --- |
    | `ACCESS_KEY` | Any long random value. The site then only opens from `https://<your-app>/?key=<ACCESS_KEY>`. |
+   | `DATABASE_URL` | Your Turso database URL (`libsql://…`) |
+   | `DATABASE_AUTH_TOKEN` | A Turso token for it |
    | `ANTHROPIC_API_KEY` | For live checks (optional) |
 
-3. Open the link. The sample data builds itself in under a second.
+3. Set the function region to your Turso database's region (Settings → Functions).
+4. Open the link. The sample data builds itself on first visit.
 
-The database is SQLite inside the function, so every query is instant. It starts fresh when Vercel restarts the function, the same as **Reset sample data**.
+Each running copy of the function reads from a local copy of the Turso database and syncs it at most once a second, so pages stay fast and every copy shows the same data. Writes go to Turso. Without `DATABASE_URL`, each copy uses its own SQLite file, which is fast but not shared between copies.
 
 Optional: `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), and `LIVE_CHECKS_PER_MINUTE` / `LIVE_CHECKS_PER_DAY` (default 10 per visitor, 200 total) to cap API spend.
 
 ## Stack
 
-React, TypeScript, Vite and antd on the front end. Flask, libSQL (SQLite, locally and on Vercel; Turso also works) and the Anthropic SDK on the server. Vitest, pytest and Playwright for tests.
+React, TypeScript, Vite and antd on the front end. Flask, libSQL (SQLite locally, Turso with a local copy on Vercel) and the Anthropic SDK on the server. Vitest, pytest and Playwright for tests.

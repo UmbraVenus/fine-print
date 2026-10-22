@@ -31,7 +31,8 @@ test('my ads: stats agree with the rows', async ({ page }) => {
   await expect(stat(page, 'in_review')).toHaveText('3')
   await expect(page.locator('.fp-ad-link')).toHaveCount(8)
   await expect(page.getByRole('link', { name: /^Pre-check / })).toHaveCount(2)
-  await expect(page.getByText('Pre-check: 1 Critical, 1 Caution')).toBeVisible()
+  // No sub-lines under internal ads: Status and the dates say it.
+  await expect(page.getByText('Pre-check: 1 Critical, 1 Caution')).toHaveCount(0)
   await page.screenshot({ path: 'screenshots/m3-my-ads.png', fullPage: true })
 })
 

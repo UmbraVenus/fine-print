@@ -7,8 +7,8 @@ import { useWorkspace } from '../app/workspace'
 import { query } from '../lib/api'
 import { isUpdated } from '../lib/seen'
 import { useApi } from '../lib/useApi'
-import { dayLabel, daysBetween, shortDate, workspaceDate } from '../lib/dates'
-import { PRODUCT_LABEL, STATUS_LABEL, plural, sourceLabel } from '../lib/labels'
+import { dayLabel, daysBetween, shortDate } from '../lib/dates'
+import { PRODUCT_LABEL, STATUS_LABEL, sourceLabel } from '../lib/labels'
 import type { AdList, AdRow, AdStatus, Stat } from '../lib/types'
 import { Icon } from './Icon'
 import { StatCards, type StatAction } from './StatCards'
@@ -53,25 +53,6 @@ export interface Filters {
 }
 
 export const NO_FILTERS: Filters = { format: [], product: [], status: [], due: [] }
-
-/** A line under the name only when it adds something the Status and date columns don't. */
-function myAdsSubLine(row: AdRow, today: string): string | null {
-  switch (row.status) {
-    case 'draft': {
-      const parts = [row.critical && `${row.critical} Critical`, row.caution && `${row.caution} Caution`].filter(Boolean)
-      return parts.length ? `Pre-check: ${parts.join(', ')}` : 'Pre-check: good standing'
-    }
-    case 'changes_required':
-    case 'pending':
-      return null
-    case 'approved_with_changes':
-      return `${plural(row.sent, 'small edit')}, no second review`
-    case 'approved':
-      return row.live_since ? `Live since ${shortDate(workspaceDate(row.live_since), today)}` : 'Ready to go live'
-    case 'rejected':
-      return row.decision_message ?? 'Rejected'
-  }
-}
 
 /** A due date: Today, Tomorrow, or a day; a past one is in the "needs action" color, not alarm red. */
 function DueDate({ day, today }: { day: string; today: string }) {
@@ -366,9 +347,9 @@ export function AdTable({
                 </span>
               )}
             </span>
-            {(view === 'my-ads' ? myAdsSubLine(row, today) : sourceLabel(row.source)) && (
+            {sourceLabel(row.source) && (
               <span style={{ fontSize: 13, lineHeight: '18px', color: '#4A5468' }}>
-                {view === 'my-ads' ? myAdsSubLine(row, today) : sourceLabel(row.source)}
+                {sourceLabel(row.source)}
               </span>
             )}
           </span>

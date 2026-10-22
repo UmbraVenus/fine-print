@@ -230,7 +230,8 @@ def run_check(db: Db, version_id: int, now: datetime, context: str = "re-check",
         log.warning("Live check limit reached for version %s", version_id)
         return {"status": "unavailable"}
     try:
-        data = call_model(client or make_client(), build_request(ad, rules, layers, model_name()))
+        with db.released():
+            data = call_model(client or make_client(), build_request(ad, rules, layers, model_name()))
         findings, passed = validate(data, rules, layers)
     except Exception as error:  # noqa: BLE001 - any failure means "unavailable", never a blocked user
         log.warning("Auto check failed for version %s: %s", version_id, error)
