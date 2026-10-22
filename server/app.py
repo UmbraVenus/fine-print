@@ -160,10 +160,19 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
 
     @app.post("/api/ads/<int:ad_id>/submit")
     def submit(ad_id: int):
+        # Submit answers at once; the page then asks for the live check on its own (submit-check).
+        return jsonify(actions.submit(get_db(), ad_id, now()))
+
+    @app.post("/api/ads/<int:ad_id>/submit-check")
+    def submit_check(ad_id: int):
+        """The live check on a just-submitted version, run after Submit has answered."""
         db = get_db()
-        live = (lambda version_id: checker.run_check(db, version_id, now(), context="submit", log_event=False)) \
-            if checker.available() else None
-        return jsonify(actions.submit(db, ad_id, now(), live_check=live))
+        ad = db.one("SELECT * FROM ads WHERE id = ?", (ad_id,))
+        if not ad or ad["status"] != "pending":
+            return jsonify(status="skipped")
+        version_id = db.scalar("SELECT id FROM ad_versions WHERE ad_id = ? AND version = ?", (ad_id, ad["current_version"]))
+        visitor = (request.headers.get("X-Forwarded-For") or request.remote_addr or "").split(",")[0].strip() or None
+        return jsonify(checker.run_check(db, version_id, now(), context="submit", log_event=False, visitor=visitor))
 
     @app.post("/api/check")
     def check():

@@ -343,7 +343,38 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const { message } = AntApp.useApp()
   const { refresh } = useWorkspace()
   const editable = ad.status === 'draft' || ad.status === 'changes_required'
-  const working: Version = (editable && detail.draft) || detail.current
+  const saved: Version = (editable && detail.draft) || detail.current
+  // Edits show at once; saves go out one at a time, in order, and the server's copy replaces this
+  // overlay only once the last one is in. A failed save drops the overlay, back to what was saved.
+  const [overlay, setOverlay] = useState<{ layers?: Layer[]; resolved: Record<string, boolean> } | null>(null)
+  const queue = useRef<Promise<unknown>>(Promise.resolve())
+  const inFlight = useRef(0)
+  useEffect(() => {
+    if (inFlight.current === 0) setOverlay(null)
+  }, [detail])
+  const working: Version = useMemo(() => {
+    if (!overlay) return saved
+    const key = (f: Finding) => `${f.rule_id}|${f.layer_id ?? '-'}`
+    return {
+      ...saved,
+      layers: overlay.layers ?? saved.layers,
+      findings: saved.findings.map((f) => (key(f) in overlay.resolved ? { ...f, resolved_by_submitter: overlay.resolved[key(f)] } : f)),
+    }
+  }, [saved, overlay])
+  /** Queue a save behind any still going; reload once the last one is in. */
+  const enqueue = (send: () => Promise<unknown>, failure: string) => {
+    inFlight.current += 1
+    const run = queue.current.then(send)
+    queue.current = run.catch(() => undefined)
+    return run
+      .catch(() => {
+        message.error(failure)
+      })
+      .finally(() => {
+        inFlight.current -= 1
+        if (inFlight.current === 0) reload()
+      })
+  }
   // Edits are marked against the copy the marketer started from.
   const [baseline] = useState<Layer[]>(() => (ad.status === 'changes_required' ? detail.current.layers : working.layers))
   const [selected, setSelected] = useState<number | null>(null)
@@ -396,24 +427,23 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   }, [working.layers, baseline])
 
   /** Save the copy; `applied` is the suggestion this edit carries out, which then counts as resolved. */
-  const saveLayer = async (layerId: string, text: string, fontSize?: number, applied?: Numbered) => {
+  const saveLayer = (layerId: string, text: string, fontSize?: number, applied?: Numbered) => {
     const layers = working.layers.map((l) =>
       l.id === layerId ? { ...l, text, ...(fontSize ? { style: { ...l.style, fontSize } } : {}) } : l,
     )
     const resolve = applied ? { rule_id: applied.finding.rule_id, layer_id: applied.finding.layer_id } : undefined
-    try {
-      await api.put(`/api/ads/${ad.id}/copy`, { layers, resolve })
-      reload()
-    } catch (e) {
-      message.error(e instanceof ApiError ? e.message : "Couldn't save your edit. Try again.")
-    }
+    setOverlay((o) => ({
+      layers,
+      resolved: { ...(o?.resolved ?? {}), ...(resolve ? { [`${resolve.rule_id}|${resolve.layer_id ?? '-'}`]: true } : {}) },
+    }))
+    return enqueue(() => api.put(`/api/ads/${ad.id}/copy`, { layers, resolve }), "Couldn't save your edit. Try again.")
   }
 
-  const applyWording = async (item: Numbered) => {
+  const applyWording = (item: Numbered) => {
     const { layer_id, quote, suggested_fix } = item.finding
     const text = layerText(layer_id)
     if (!layer_id || !quote || !suggested_fix || text === undefined || !text.includes(quote)) return
-    await saveLayer(layer_id, text.replace(quote, suggested_fix), undefined, item)
+    void saveLayer(layer_id, text.replace(quote, suggested_fix), undefined, item)
     message.success('Swapped in on the ad, and marked resolved.')
   }
 
@@ -427,10 +457,10 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     return (before?.style?.fontSize ?? READABLE_SIZE) < READABLE_SIZE ? 'done' : 'none'
   }
 
-  const makeReadable = async (item: Numbered) => {
+  const makeReadable = (item: Numbered) => {
     const layer = working.layers.find((l) => l.id === item.finding.layer_id)
     if (!layer) return
-    await saveLayer(layer.id, layer.text, READABLE_SIZE, item)
+    void saveLayer(layer.id, layer.text, READABLE_SIZE, item)
     message.success(`Swapped in ${READABLE_SIZE}px, and marked resolved.`)
   }
 
@@ -443,7 +473,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     layerText: layerText(item.finding.layer_id),
     onUseWording: () => applyWording(item),
     onEditOnAd: () => editOnAd(item.finding.layer_id),
-    onResolve: (r: boolean) => setResolved(item.finding.id, r),
+    onResolve: (r: boolean) => setResolved(item.finding, r),
     size: sizeState(item),
     onMakeReadable: () => makeReadable(item),
   })
@@ -454,13 +484,17 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     window.setTimeout(() => document.querySelector(`[data-layer="${layerId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
   }
 
-  const setResolved = async (findingId: number, resolved: boolean) => {
-    try {
-      await api.post(`/api/findings/${findingId}`, { action: resolved ? 'resolve' : 'reopen' })
-      reload()
-    } catch {
-      message.error("Couldn't save that. Try again.")
-    }
+  const setResolved = (finding: Finding, resolved: boolean) => {
+    const key = `${finding.rule_id}|${finding.layer_id ?? '-'}`
+    setOverlay((o) => ({ layers: o?.layers, resolved: { ...(o?.resolved ?? {}), [key]: resolved } }))
+    // The finding's id can change when the first edit makes a new draft, so look it up when the save runs.
+    void enqueue(async () => {
+      const latest = await api.get<AdDetail>(`/api/ads/${ad.id}`)
+      const now = ((editable && latest.draft) || latest.current).findings.find(
+        (f) => f.origin === 'auto' && `${f.rule_id}|${f.layer_id ?? '-'}` === key,
+      )
+      await api.post(`/api/findings/${now?.id ?? finding.id}`, { action: resolved ? 'resolve' : 'reopen' })
+    }, "Couldn't save that. Try again.")
   }
 
   const saveNote = async (findingId: number, note: string) => {
@@ -475,6 +509,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
     setChecking(true)
     setUnavailable(false)
     try {
+      await queue.current
       // An unsubmitted copy of a returned ad is saved first, so the check sees the edits.
       const target = working.id
       const result = await api.post<CheckResult>('/api/check', { adVersionId: target, context: 're-check' })
@@ -490,7 +525,10 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
   const submit = async () => {
     setSubmitting(true)
     try {
+      await queue.current  // the last edit is in before the ad goes to review
       const result = await api.post<{ due_date: string; version: number }>(`/api/ads/${ad.id}/submit`)
+      // The live check runs after Submit has answered; nobody waits on it.
+      void api.post(`/api/ads/${ad.id}/submit-check`).catch(() => undefined)
       refresh()
       message.success(`Sent for review${result.version > 1 ? ` as version ${result.version}` : ''}. Your reviewer takes it from here.`)
       navigate('/my-ads')

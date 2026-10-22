@@ -1,4 +1,5 @@
 import { Input, Modal } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import { useState } from 'react'
 
 export type Decision = 'approved' | 'approved_with_changes' | 'changes_required' | 'rejected'
@@ -40,6 +41,14 @@ export function DecisionBar({
   const [modal, setModal] = useState<keyof typeof MODAL_COPY | null>(null)
   const [message, setMessage] = useState('')
 
+  // The button that was clicked shows a spinner while the decision saves.
+  const [clicked, setClicked] = useState<Decision | null>(null)
+  const spin = (decision: Decision) => (busy && clicked === decision ? <LoadingOutlined aria-hidden="true" style={{ marginRight: 6 }} /> : null)
+  const decideNow = (decision: Decision) => {
+    setClicked(decision)
+    void onDecide(decision)
+  }
+
   const open = (decision: keyof typeof MODAL_COPY) => {
     setMessage(decision === 'approved_with_changes' ? '' : defaultMessage)
     setModal(decision)
@@ -61,11 +70,13 @@ export function DecisionBar({
           type="button"
           className="fp-decision"
           disabled={busy}
-          onClick={() => (needsChangeText ? open('approved_with_changes') : onDecide('approved_with_changes'))}
+          onClick={() => (needsChangeText ? open('approved_with_changes') : decideNow('approved_with_changes'))}
         >
+          {spin('approved_with_changes')}
           Approve with changes
         </button>
-        <button type="button" className="fp-decision fp-decision-approve" disabled={busy} onClick={() => onDecide('approved')}>
+        <button type="button" className="fp-decision fp-decision-approve" disabled={busy} aria-busy={busy && clicked === 'approved'} onClick={() => decideNow('approved')}>
+          {spin('approved')}
           Approve
         </button>
       </div>
