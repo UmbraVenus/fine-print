@@ -1,3 +1,4 @@
+import { LoadingOutlined } from '@ant-design/icons'
 import { Popover } from 'antd'
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { api } from '../lib/api'
@@ -123,12 +124,14 @@ function VoteCard({ feature }: { feature: ComingFeature }) {
             Thanks, noted
             <span aria-hidden="true" style={{ color: '#8A93A6' }}>·</span>
             <button type="button" className="fp-quiet" style={{ font: 'inherit', fontWeight: 600, padding: '2px 4px', borderRadius: 4 }} onClick={unvote} disabled={saving}>
-              Undo
+              {saving && <LoadingOutlined aria-hidden="true" style={{ marginRight: 4 }} />}
+              {saving ? 'Undoing…' : 'Undo'}
             </button>
           </span>
         ) : (
           <button type="button" className="fp-copy-button" onClick={vote} disabled={saving}>
-            I’d use this
+            {saving && <LoadingOutlined aria-hidden="true" style={{ marginRight: 6 }} />}
+            {saving ? 'Saving…' : 'I’d use this'}
           </button>
         )}
         {votes !== null && <span aria-live="polite" style={{ fontSize: 13, color: '#4A5468' }}>{voteCount(votes)}</span>}
