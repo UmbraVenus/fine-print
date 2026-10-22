@@ -10,7 +10,7 @@ from flask import Flask, g, jsonify, request
 
 from . import access, actions, checker, repo
 from .dates import iso, local_date, utcnow
-from .db import Db, connect, default_url, is_remote, migrate, replica
+from .db import Db, connect, migrate
 from .seed import ensure_seeded, seed
 
 
@@ -19,7 +19,7 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     app.config["DATABASE_URL"] = database_url
     app.config["CLOCK"] = clock
     access.install(app)
-    state: dict[str, Any] = {"migrated": False, "memory": None, "local_fallback": False}
+    state: dict[str, Any] = {"migrated": False, "memory": None}
     setup_lock = threading.Lock()
 
     def get_db() -> Db:
@@ -30,23 +30,9 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
                 if state["memory"] is None:
                     state["memory"] = Db(connect(":memory:"))
                 g.db = state["memory"]
-            elif is_remote(url or default_url()) and not state["local_fallback"]:
-                # A shared remote database, read through a local copy: one sync per request burst.
-                try:
-                    copy = replica(url or default_url())
-                except Exception:
-                    app.logger.exception("Could not open the local copy; using a local database instead")
-                    state["local_fallback"] = True
-                    return get_db()
-                copy.lock.acquire()
-                g.replica = copy
-                try:
-                    copy.sync()
-                except Exception:
-                    app.logger.exception("Sync failed; serving the last synced copy")
-                g.db = Db(copy.conn, copy)
             else:
-                g.db = Db(connect("file:/tmp/fine-print.db" if state["local_fallback"] else url))
+                # Locally a file; in production one shared Turso database, queried directly.
+                g.db = Db(connect(url))
             # The first requests arrive together; one at a time migrates and seeds.
             with setup_lock:
                 if not state["migrated"]:
@@ -63,13 +49,6 @@ def create_app(database_url: str | None = None, clock: Callable = utcnow) -> Fla
     @app.teardown_appcontext
     def close_db(_exc: BaseException | None) -> None:
         db = g.pop("db", None)
-        copy = g.pop("replica", None)
-        if copy is not None:
-            # The connection is shared: leave it clean for the next request.
-            if copy.conn.in_transaction:
-                copy.conn.rollback()
-            copy.lock.release()
-            return
         if db is not None and db is not state["memory"]:
             db.conn.close() if hasattr(db.conn, "close") else None
 

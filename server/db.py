@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import threading
-import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -27,58 +25,6 @@ def default_url() -> str:
     return "file:./local.db"
 
 
-def is_remote(url: str | None) -> bool:
-    return bool(url) and not url.startswith("file:") and url != ":memory:"
-
-
-REPLICA_PATH = "/tmp/fine-print-replica.db"
-# Pull other copies' writes at most this often; a page's burst of requests shares one sync.
-SYNC_EVERY_SECONDS = 1.0
-
-
-class Replica:
-    """
-    A local copy of the remote database, for Vercel. Reads run on the local file, writes go to
-    the remote database, and sync() pulls in what other running copies wrote. One connection per
-    process, used one request at a time.
-    """
-
-    def __init__(self, url: str):
-        self.conn = libsql.connect(REPLICA_PATH, sync_url=url, auth_token=os.environ.get("DATABASE_AUTH_TOKEN", ""),
-                                   _check_same_thread=False)
-        self.lock = threading.Lock()
-        self.last_sync = 0.0
-        self.sync(force=True)
-
-    @contextmanager
-    def released(self) -> Iterator[None]:
-        """Let other requests use the copy during a slow outside call, such as the model."""
-        self.conn.commit()
-        self.lock.release()
-        try:
-            yield
-        finally:
-            self.lock.acquire()
-            self.sync(force=True)
-
-    def sync(self, force: bool = False) -> None:
-        if force or time.monotonic() - self.last_sync >= SYNC_EVERY_SECONDS:
-            self.conn.sync()
-            self.last_sync = time.monotonic()
-
-
-_replica: Replica | None = None
-_replica_lock = threading.Lock()
-
-
-def replica(url: str) -> Replica:
-    global _replica
-    with _replica_lock:
-        if _replica is None:
-            _replica = Replica(url)
-    return _replica
-
-
 def connect(url: str | None = None) -> Any:
     url = url or default_url()
     if url == ":memory:":
@@ -91,18 +37,8 @@ def connect(url: str | None = None) -> Any:
 class Db:
     """A thin wrapper that returns rows as dicts."""
 
-    def __init__(self, conn: Any, replica: "Replica | None" = None):
+    def __init__(self, conn: Any):
         self.conn = conn
-        self.replica = replica
-
-    @contextmanager
-    def released(self) -> Iterator[None]:
-        """Around a slow outside call: on a shared local copy, frees it for other requests meanwhile."""
-        if self.replica is None:
-            yield
-        else:
-            with self.replica.released():
-                yield
 
     def all(self, sql: str, params: tuple | list = ()) -> list[dict]:
         cur = self.conn.execute(sql, tuple(params))

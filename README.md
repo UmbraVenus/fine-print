@@ -85,10 +85,10 @@ Checks: `npm run lint`, `npm run build`, `npm test` (unit and server), `npm run 
 3. Set the function region to your Turso database's region (Settings → Functions).
 4. Open the link. The sample data builds itself on first visit.
 
-Each running copy of the function reads from a local copy of the Turso database and syncs it at most once a second, so pages stay fast and every copy shows the same data. Writes go to Turso. Without `DATABASE_URL`, each copy uses its own SQLite file, which is fast but not shared between copies.
+Every running copy of the function uses the same Turso database, so everyone sees the same data.
 
 Optional: `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), and `LIVE_CHECKS_PER_MINUTE` / `LIVE_CHECKS_PER_DAY` (default 10 per visitor, 200 total) to cap API spend.
 
 ## Stack
 
-React, TypeScript, Vite and antd on the front end. Flask, libSQL (SQLite locally, Turso with a local copy on Vercel) and the Anthropic SDK on the server. Vitest, pytest and Playwright for tests.
+React, TypeScript, Vite and antd on the front end. Flask, libSQL (SQLite locally, Turso in production) and the Anthropic SDK on the server. Vitest, pytest and Playwright for tests.
