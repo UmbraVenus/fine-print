@@ -6,34 +6,39 @@ Fine Print is a marketing-compliance review tool for ClearPath Financial, a fict
 
 **Try it:** the live link is in the email I sent with this repo (it carries a private access key).
 
-![Insights](docs/gifs/04-insights.gif)
-
 ## What to try
 
 Switch roles at **VIEWING AS**, top left.
 
-### 1. A prepared review
-Every ad arrives with its suggestions pinned on the words, grouped by severity. Keep what matters, add your own, request changes.
+### 1. Pre-check: fix it before anyone reviews it
+The marketer runs the same check the reviewer will see, on their own ad, before submitting. Each suggestion is pinned on the exact words, with the wording to use instead. Click any text on the ad to edit it, then **Re-check**. Suggestions never block Submit. When an ad comes back, what the reviewer kept sits at the top.
 
-![Prepared review](docs/gifs/01-review.gif)
+![Pre-check](docs/gifs/01-pre-check.gif)
 
-### 2. Pre-check before submitting
-Marketers run the same auto check on their own ad before a reviewer sees it. Each suggestion is pinned on the words, with the wording to use instead. **Swap** puts it in (or a readable size) and marks it resolved. Click any text on the ad to edit it, then **Re-check**. Suggestions never block Submit. When an ad comes back, what the reviewer kept sits at the top.
+### 2. Fix it in one click
+**Swap** puts the suggested wording on the ad, or makes small print readable, and marks it resolved. No copy and paste, no new upload.
 
-![Pre-check](docs/gifs/02-pre-check.gif)
+![One-click fix](docs/gifs/02-one-click-fix.gif)
 
-### 3. Only what changed
+### 3. A prepared review
+Every ad arrives with its suggestions pinned on the words, grouped by severity. Keep what matters, add your own, then decide. Done ads go back to the Queue.
+
+![Prepared review](docs/gifs/03-prepared-review.png)
+
+### 4. Only what changed
 A resubmission shows the old version above the new one, with what got fixed in green.
 
-![What changed](docs/gifs/03-what-changed.gif)
+![What changed](docs/gifs/04-what-changed.gif)
 
-### 4. Insights
-Approvals per week, time saved, rounds per ad and first-round approvals, each against the week before Fine Print.
+### 5. Insights
+Approvals per week, time saved, rounds per ad and first-round approvals, each against the weeks before Fine Print.
 
-### 5. Coming next
+![Insights](docs/gifs/05-insights.png)
+
+### 6. Coming next
 Ideas we haven't built sit where they'd live, marked "Coming next". Vote for the ones you'd use.
 
-![Coming next](docs/gifs/05-coming-next.gif)
+![Coming next](docs/gifs/06-coming-next.gif)
 
 ## Assumptions
 
