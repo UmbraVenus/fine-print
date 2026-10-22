@@ -14,7 +14,7 @@ test('Insights is the reviewer’s, and agrees with History', async ({ page }) =
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Insights')
   await expect(page.locator('[data-insight="approved"]')).toHaveText(approved)
   await expect(page.locator('[data-insight="first_round"]')).toHaveText(firstReview)
-  await expect(page.getByText(/^From about \d+ working days to/)).toBeVisible()
+  await expect(page.getByText(/From about \d+ working days to/)).toBeVisible()
   await expect(page.locator('[data-affiliate]').first()).toContainText('TotallyLegitLoans.biz')
   await expect(page.locator('[data-affiliate]').first()).toContainText('At risk')
   await page.screenshot({ path: 'screenshots/final/11-insights.png', fullPage: true })

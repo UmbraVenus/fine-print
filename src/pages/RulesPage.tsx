@@ -1,4 +1,3 @@
-import { Skeleton } from 'antd'
 import type { CSSProperties } from 'react'
 import { useWorkspace } from '../app/workspace'
 import { ComingNextButton } from '../components/ComingNext'
@@ -6,6 +5,7 @@ import { FilledIcon, Icon } from '../components/Icon'
 import { Tag } from '../components/StatusTag'
 import type { Rule } from '../lib/detail'
 import { useApi } from '../lib/useApi'
+import { Loading } from '../components/Loading'
 
 const SECTIONS: Array<{ category: Rule['category']; sub: string }> = [
   { category: 'Claims', sub: 'What the words promise' },
@@ -113,7 +113,7 @@ function RuleRow({ rule }: { rule: Rule }) {
 
 export function RulesPage() {
   const { version } = useWorkspace()
-  const { latest } = useApi<{ rules: Rule[] }>('/api/rules', version)
+  const { latest } = useApi<{ rules: Rule[] }>('/api/rules', version, true)
   const rules = latest?.rules
 
   return (
@@ -128,7 +128,7 @@ export function RulesPage() {
         <ComingNextButton feature="doc-rules" />
       </div>
 
-      {!rules && <Skeleton active paragraph={{ rows: 12 }} />}
+      {!rules && <Loading text="Loading the rules…" />}
       {rules &&
         SECTIONS.map(({ category, sub }) => {
           const inSection = rules.filter((r) => r.category === category)

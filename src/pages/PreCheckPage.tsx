@@ -31,6 +31,7 @@ import { PRODUCT_LABEL } from '../lib/labels'
 import type { Layer } from '../lib/types'
 import { useMarkSeen } from '../lib/seen'
 import { useApi } from '../lib/useApi'
+import { Loading } from '../components/Loading'
 
 const UNAVAILABLE = 'Auto check unavailable right now. You can still submit as usual.'
 
@@ -59,7 +60,7 @@ export function PreCheckPage() {
     return (
       <>
         <BackLink />
-        <Skeleton active paragraph={{ rows: 10 }} />
+        <Loading text="Loading your ad…" />
       </>
     )
   }
@@ -672,7 +673,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
                     {checking ? 'Thinking…' : 'Re-check'}
                   </Button>
                   <Button type="primary" className="fp-footer-button fp-footer-primary" onClick={submit} loading={submitting} disabled={checking}>
-                    Submit
+                    {submitting ? 'Submitting…' : 'Submit'}
                   </Button>
                 </div>
               </div>

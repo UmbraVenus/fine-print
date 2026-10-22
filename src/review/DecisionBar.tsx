@@ -4,6 +4,14 @@ import { useState } from 'react'
 
 export type Decision = 'approved' | 'approved_with_changes' | 'changes_required' | 'rejected'
 
+/** What a decision's button says while it saves. */
+const WORKING: Record<Decision, string> = {
+  approved: 'Approving…',
+  approved_with_changes: 'Approving…',
+  changes_required: 'Sending back…',
+  rejected: 'Rejecting…',
+}
+
 const MODAL_COPY: Record<'changes_required' | 'rejected' | 'approved_with_changes', { title: string; label: string; ok: string; help: string }> = {
   changes_required: {
     title: 'Request changes',
@@ -73,17 +81,17 @@ export function DecisionBar({
           onClick={() => (needsChangeText ? open('approved_with_changes') : decideNow('approved_with_changes'))}
         >
           {spin('approved_with_changes')}
-          Approve with changes
+          {busy && clicked === 'approved_with_changes' ? 'Approving…' : 'Approve with changes'}
         </button>
         <button type="button" className="fp-decision fp-decision-approve" disabled={busy} aria-busy={busy && clicked === 'approved'} onClick={() => decideNow('approved')}>
           {spin('approved')}
-          Approve
+          {busy && clicked === 'approved' ? 'Approving…' : 'Approve'}
         </button>
       </div>
       <Modal
         open={Boolean(modal)}
         title={copy?.title}
-        okText={copy?.ok}
+        okText={busy && modal ? WORKING[modal] : copy?.ok}
         cancelText="Cancel"
         okButtonProps={{ disabled: !message.trim(), loading: busy, danger: modal === 'rejected' }}
         onCancel={() => setModal(null)}

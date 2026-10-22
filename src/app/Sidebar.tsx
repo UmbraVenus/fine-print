@@ -1,11 +1,12 @@
 import { App as AntApp, Dropdown, Popconfirm, Tooltip } from 'antd'
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { COMING_NEXT, ComingNextPopover, VoteMark } from '../components/ComingNext'
 import { Icon, type IconName } from '../components/Icon'
 import { Logo } from '../components/Logo'
 import { api } from '../lib/api'
 import { resetSeen } from '../lib/seen'
+import { clearCache, prefetch } from '../lib/useApi'
 import { ROLE_LABEL } from '../lib/labels'
 import type { Role } from '../lib/types'
 import { useWorkspace } from './workspace'
@@ -54,6 +55,12 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   const [resetting, setResetting] = useState(false)
   const items = navItems(role, pending)
 
+  // Rules never change in a session, and Insights takes a moment to add up: load both early.
+  useEffect(() => {
+    prefetch('/api/rules')
+    if (role === 'reviewer') prefetch('/api/insights')
+  }, [role])
+
   const switchRole = (next: Role) => {
     setRole(next)
     navigate(ROLE_LABEL[next].home)
@@ -64,6 +71,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     try {
       await api.post('/api/reset')
       resetSeen()
+      clearCache()
       message.success('Sample data reset')
       refresh()
       navigate(ROLE_LABEL[role].home)

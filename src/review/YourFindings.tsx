@@ -226,7 +226,7 @@ export function YourFindings({
               Cancel
             </Button>
             <Button type="primary" onClick={add} loading={adding} style={{ minHeight: 40, padding: '0 18px' }}>
-              Add finding
+              {adding ? 'Adding…' : 'Add finding'}
             </Button>
           </div>
         </>

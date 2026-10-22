@@ -1146,3 +1146,17 @@ a.fp-pager:hover {
   border-radius: 9999px;
   background: var(--fp-primary);
 }
+
+/* ---------------------------------------------------------------- loading */
+
+.fp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 64px 24px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: #115e59;
+}

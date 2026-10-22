@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { nextAfter, queueOrder, resetData, setRole } from './helpers.ts'
+import { queueOrder, resetData, setRole } from './helpers.ts'
 
 test.use({ viewport: { width: 1280, height: 900 } })
 
@@ -47,7 +47,6 @@ test('keep, edit, dismiss with a reason, restore', async ({ page }) => {
 })
 
 test('reviewer requests changes on Fall personal loan', async ({ page }) => {
-  const order = await queueOrder(page)
   await page.goto('/review/3')
   await page.locator('[data-finding="1"]').getByRole('button', { name: 'Keep' }).click()
   await page.getByRole('button', { name: 'Add a finding' }).click()
@@ -60,11 +59,9 @@ test('reviewer requests changes on Fall personal loan', async ({ page }) => {
   await expect(dialog.getByRole('textbox')).toHaveValue(/same-day cash/)
   await dialog.getByRole('button', { name: 'Request changes' }).click()
   await expect(page.getByText('Changes requested ·')).toBeVisible()
-  // The next ad in the queue opens in the same tab.
-  const next = nextAfter(order, 3)
-  await expect(page).toHaveURL(new RegExp(`/review/${next}$`))
-  await expect(page.getByRole('heading', { level: 1, name: order.find((r) => r.id === next)!.name })).toBeVisible()
-  await expect(page.getByRole('link', { name: /Queue/ }).first()).toBeVisible()
+  // Done with this ad: back to the Queue, which no longer lists it.
+  await expect(page).toHaveURL(/\/queue$/)
+  await expect(page.locator('.fp-ad-link', { hasText: 'Fall personal loan' })).toHaveCount(0)
   await expect(page.locator('.fp-nav-badge')).toHaveText('8')
 
   // The marketer now sees it under My ads with the reviewer's comments.
@@ -75,10 +72,9 @@ test('reviewer requests changes on Fall personal loan', async ({ page }) => {
 })
 
 test('approve shows Undo, and Undo restores everything', async ({ page }) => {
-  const order = await queueOrder(page)
   await page.goto('/review/4')
   await page.getByRole('button', { name: 'Approve', exact: true }).click()
-  await expect(page).toHaveURL(new RegExp(`/review/${nextAfter(order, 4)}$`))
+  await expect(page).toHaveURL(/\/queue$/)
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(page.getByText('Decision undone')).toBeVisible()
   await expect(page).toHaveURL(/\/review\/4$/)
@@ -124,7 +120,6 @@ test('clearing the queue shows the empty state', async ({ page }) => {
   }
   await page.goto('/review/11')
   await page.getByRole('button', { name: 'Approve', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Queue cleared. Go get a snack.' })).toBeVisible()
-  await page.goto('/queue')
+  await expect(page).toHaveURL(/\/queue$/)
   await expect(page.getByText('Queue cleared. Go get a snack.')).toBeVisible()
 })

@@ -1,11 +1,12 @@
-import { Skeleton } from 'antd'
+import { Tooltip } from 'antd'
 import { Link } from 'react-router-dom'
 import { useWorkspace } from '../app/workspace'
 import { Icon } from '../components/Icon'
-import { TrendBadge } from '../components/StatCards'
+import { trendText } from '../components/StatCards'
 import { SeverityTag } from '../components/StatusTag'
 import type { Trend } from '../lib/types'
 import { useApi } from '../lib/useApi'
+import { Loading } from '../components/Loading'
 
 interface Metric {
   key: string
@@ -81,13 +82,33 @@ function MetricCard({ metric }: { metric: Metric }) {
   return (
     <section className="fp-card" aria-label={metric.label} style={{ padding: '24px 22px 22px', display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
       <h2 style={{ margin: 0, fontSize: 17, lineHeight: '24px', fontWeight: 700 }}>{metric.label}</h2>
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <span data-insight={metric.key} style={{ fontSize: 40, lineHeight: '48px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-          {metric.display}
-        </span>
-        {metric.trend && <TrendBadge trend={metric.trend} />}
-      </div>
-      <p style={{ margin: 0, fontSize: 13, lineHeight: '18px', color: '#4A5468', minHeight: 36 }}>{metric.note}</p>
+      {/* The change takes the stage; the number it's based on sits under it. */}
+      {metric.trend ? (
+        <Tooltip title={metric.trend.compared_to}>
+          <span
+            tabIndex={0}
+            aria-label={trendText(metric.trend)}
+            style={{ alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 40, lineHeight: '48px', fontWeight: 800, letterSpacing: '-0.02em', color: metric.trend.good ? '#067647' : '#15213B' }}
+          >
+            <Icon name={metric.trend.direction === 'up' ? 'arrowUp' : 'arrowDown'} size={28} strokeWidth={3} />
+            {metric.trend.value}
+            {metric.trend.unit === 'pts' ? ' pts' : '%'}
+          </span>
+        </Tooltip>
+      ) : (
+        <span style={{ fontSize: 40, lineHeight: '48px', fontWeight: 800, letterSpacing: '-0.02em' }}>{metric.display}</span>
+      )}
+      <p style={{ margin: 0, fontSize: 13, lineHeight: '18px', color: '#4A5468', minHeight: 36 }}>
+        {metric.trend && (
+          <>
+            <span data-insight={metric.key} style={{ fontSize: 15, fontWeight: 700, color: '#15213B' }}>
+              {metric.display}
+            </span>
+            {' · '}
+          </>
+        )}
+        {metric.note}
+      </p>
       {/* Pinned to the bottom, so the four charts line up whatever the text above them. */}
       <div style={{ marginTop: 'auto', paddingTop: 6 }}>
         <Sparkline series={metric.series} label={metric.label} format={FORMAT[metric.key] ?? String} />
@@ -97,7 +118,7 @@ function MetricCard({ metric }: { metric: Metric }) {
 }
 
 export function InsightsPage() {
-  const { data, error } = useApi<Insights>('/api/insights')
+  const { latest: data, error } = useApi<Insights>('/api/insights', 0, true)
   const { pending } = useWorkspace()
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -116,7 +137,7 @@ export function InsightsPage() {
           Insights didn't load. Reload the page to try again.
         </p>
       ) : !data ? (
-        <Skeleton active paragraph={{ rows: 8 }} />
+        <Loading text="Adding up the numbers…" />
       ) : (
         <>
           <div className="fp-insight-metrics">

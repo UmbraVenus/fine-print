@@ -14,6 +14,7 @@ import type { AdList, AdRow, AdStatus, Stat } from '../lib/types'
 import { Icon } from './Icon'
 import { StatCards, type StatAction } from './StatCards'
 import { AutoCheckTag, StatusTag } from './StatusTag'
+import { Loading } from './Loading'
 
 export type TableView = 'my-ads' | 'queue' | 'history'
 
@@ -26,13 +27,14 @@ interface ViewConfig {
   secondTitle?: string
   /** Which date column sorts the table at first: the main one, or the second (the Queue starts by Updated). */
   defaultSort?: 'date' | 'second'
+  loadingText: string
   empty: string
 }
 
 const VIEWS: Record<TableView, ViewConfig> = {
-  'my-ads': { statusTitle: 'Status', statusKey: 'status', dateTitle: 'Updated', secondTitle: 'Due', defaultOrder: 'desc', empty: 'No ads yet.' },
-  queue: { statusTitle: 'Auto check', statusKey: 'auto_check', dateTitle: 'Due', secondTitle: 'Updated', defaultSort: 'second', defaultOrder: 'desc', empty: 'Queue cleared. Go get a snack.' },
-  history: { statusTitle: 'Decision', statusKey: 'status', dateTitle: 'Closed', defaultOrder: 'desc', empty: 'No approved ads yet.' },
+  'my-ads': { statusTitle: 'Status', statusKey: 'status', dateTitle: 'Updated', secondTitle: 'Due', defaultOrder: 'desc', empty: 'No ads yet.', loadingText: 'Loading your ads…' },
+  queue: { statusTitle: 'Auto check', statusKey: 'auto_check', dateTitle: 'Due', secondTitle: 'Updated', defaultSort: 'second', defaultOrder: 'desc', empty: 'Queue cleared. Go get a snack.', loadingText: 'Getting your queue ready…' },
+  history: { statusTitle: 'Decision', statusKey: 'status', dateTitle: 'Closed', defaultOrder: 'desc', empty: 'No approved ads yet.', loadingText: 'Loading past decisions…' },
 }
 
 const AUTO_CHECK_OPTIONS = [
@@ -305,13 +307,13 @@ export function AdTable({
   useEffect(() => {
     if (!loaded) return
     const others: TableView[] = role === 'reviewer' ? ['queue', 'history'] : ['my-ads']
-    others.filter((v) => v !== view).forEach((v) => prefetch(firstUrl(v), version))
-  }, [loaded, role, view, version])
+    others.filter((v) => v !== view).forEach((v) => prefetch(firstUrl(v)))
+  }, [loaded, role, view])
 
   useEffect(() => {
     if (local || !data || page * pageSize >= data.total) return
-    prefetch(`/api/ads${params.replace(/([?&])page=\d+/, `$1page=${page + 1}`)}`, version)
-  }, [local, data, page, pageSize, params, version])
+    prefetch(`/api/ads${params.replace(/([?&])page=\d+/, `$1page=${page + 1}`)}`)
+  }, [local, data, page, pageSize, params])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -525,10 +527,10 @@ export function AdTable({
         rowKey="id"
         columns={columns}
         dataSource={data?.rows ?? []}
-        loading={waiting}
+        loading={waiting && Boolean(data)}
         pagination={false}
         onChange={onChange}
-        locale={{ emptyText: loading && !data ? ' ' : <div className="fp-table-empty">{empty}</div> }}
+        locale={{ emptyText: loading && !data ? <Loading text={config.loadingText} /> : <div className="fp-table-empty">{empty}</div> }}
         tableLayout="fixed"
         // Below ~1100px the columns keep their widths and the table scrolls inside its card.
         scroll={{ x: 980 }}

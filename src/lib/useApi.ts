@@ -7,19 +7,26 @@ interface Result<T> {
   error?: unknown
 }
 
-/** Responses kept for tables, by URL and version, so a page or filter seen before shows at once. */
+/**
+ * The newest response for each URL, for pages that can show slightly old data while they refresh
+ * (tables, Rules, Insights). Kept across visits and refreshes, so a page seen before shows at once.
+ */
 const cache = new Map<string, unknown>()
 
-/** Fetch a URL into the cache ahead of time, e.g. the next page. */
-export function prefetch(url: string, version = 0) {
-  const key = `${url}#${version}`
-  if (cache.has(key)) return
-  api.get(url).then((data) => cache.set(key, data)).catch(() => undefined)
+/** Fetch a URL into the cache ahead of time, e.g. the next page or another table. */
+export function prefetch(url: string) {
+  if (cache.has(url)) return
+  api.get(url).then((data) => cache.set(url, data)).catch(() => undefined)
+}
+
+/** After Reset, nothing cached is true any more. */
+export function clearCache() {
+  cache.clear()
 }
 
 /**
- * GET a URL and refetch when it (or `version`) changes. With `cached`, a response seen before shows
- * at once while it refreshes in the background. While a new request is in flight,
+ * GET a URL and refetch when it (or `version`) changes. With `cached`, this URL's last response
+ * shows at once while it refreshes in the background. While a new request is in flight,
  * the last data stays on screen and `loading` is true.
  */
 export function useApi<T>(url: string | null, version = 0, cached = false) {
@@ -36,7 +43,7 @@ export function useApi<T>(url: string | null, version = 0, cached = false) {
         if (cancelled) return
         setResult({ key, data })
         setLast({ url, data })
-        if (cached) cache.set(key, data)
+        if (cached) cache.set(url, data)
       })
       .catch((error: unknown) => !cancelled && setResult({ key, error }))
     return () => {
@@ -44,14 +51,14 @@ export function useApi<T>(url: string | null, version = 0, cached = false) {
     }
   }, [url, key, cached])
 
-  const hit = cached ? (cache.get(key) as T | undefined) : undefined
-  const current = result?.key === key ? result : hit !== undefined ? { key, data: hit } : null
+  const hit = cached && url ? (cache.get(url) as T | undefined) : undefined
+  const current = result?.key === key ? result : null
   return {
     data: current?.data,
-    /** The newest data we have, even if it's for an older URL. */
-    latest: current?.data ?? last?.data,
-    /** True while the newest data on screen is for a different URL (not just an older version). */
-    stale: !current && last?.url !== url,
+    /** The newest data we have: this URL's, possibly from before a refresh, or else an older URL's. */
+    latest: current?.data ?? hit ?? last?.data,
+    /** True while the data on screen is for a different URL (not just from before a refresh). */
+    stale: !current && hit === undefined && last?.url !== url,
     error: current?.error,
     loading: Boolean(url) && !current,
   }

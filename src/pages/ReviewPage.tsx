@@ -1,4 +1,4 @@
-import { App as AntApp, Skeleton } from 'antd'
+import { App as AntApp } from 'antd'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
@@ -18,6 +18,7 @@ import { DismissedCard, ReviewSuggestionCard, type SuggestionActions } from '../
 import { CompareVersions, WhatChanged, compareMarkers, openItems } from '../review/WhatChanged'
 import { compareVersions } from '../review/compare'
 import { YourFindings } from '../review/YourFindings'
+import { Loading } from '../components/Loading'
 
 const DONE_LABEL: Record<Decision, string> = {
   approved: 'Approved',
@@ -37,12 +38,10 @@ export function ReviewPage() {
   const adId = Number(params.id)
   const { role, version } = useWorkspace()
   const [reload, setReload] = useState(0)
-  const [cleared, setCleared] = useState<number | null>(null)
   const { latest, error } = useApi<AdDetail>(`/api/ads/${adId}`, version * 1000 + reload)
   useMarkSeen(role, latest && latest.ad.id === adId ? adId : null, latest?.ad.updated_at)
   const detail = latest && latest.ad.id === adId ? latest : null
 
-  if (cleared === adId) return <QueueCleared />
   if (error instanceof ApiError && error.status === 404) {
     return (
       <>
@@ -56,11 +55,32 @@ export function ReviewPage() {
     return (
       <>
         <BackLink />
-        <Skeleton active paragraph={{ rows: 10 }} />
+        <Loading text="Preparing this review…" />
       </>
     )
   }
-  return <ReviewScreen key={adId} detail={detail} reload={() => setReload((r) => r + 1)} onCleared={() => setCleared(adId)} />
+  return <ReviewScreen key={adId} detail={detail} reload={() => setReload((r) => r + 1)} />
+}
+
+/** "Approved · Undo"; Undo says "Undoing…" while it works. */
+function DecisionToast({ label, onUndo }: { label: string; onUndo: () => Promise<void> }) {
+  const [undoing, setUndoing] = useState(false)
+  return (
+    <span className="fp-toast">
+      {label} ·{' '}
+      <button
+        type="button"
+        className="fp-toast-undo"
+        disabled={undoing}
+        onClick={() => {
+          setUndoing(true)
+          void onUndo()
+        }}
+      >
+        {undoing ? 'Undoing…' : 'Undo'}
+      </button>
+    </span>
+  )
 }
 
 function BackLink() {
@@ -72,25 +92,7 @@ function BackLink() {
   )
 }
 
-function QueueCleared() {
-  return (
-    <>
-      <BackLink />
-      <div className="fp-card" style={{ padding: '64px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
-        <span aria-hidden="true" style={{ width: 56, height: 56, borderRadius: 16, background: '#ECFDF3', color: '#067647', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="checkCircle" size={28} />
-        </span>
-        <h1 className="fp-page-title" style={{ fontSize: 24, lineHeight: '32px' }}>
-          Queue cleared. Go get a snack.
-        </h1>
-        <p style={{ margin: 0, fontSize: 15, color: '#4A5468' }}>Nothing is waiting for a decision.</p>
-        <Link to="/history">See what you approved in History</Link>
-      </div>
-    </>
-  )
-}
-
-function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload: () => void; onCleared: () => void }) {
+function ReviewScreen({ detail, reload }: { detail: AdDetail; reload: () => void }) {
   const { ad, current, rules } = detail
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
@@ -183,17 +185,10 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
       message.open({
         key: 'decision',
         duration: 5,
-        content: (
-          <span className="fp-toast">
-            {DONE_LABEL[decision]} ·{' '}
-            <button type="button" className="fp-toast-undo" onClick={undo}>
-              Undo
-            </button>
-          </span>
-        ),
+        content: <DecisionToast label={DONE_LABEL[decision]} onUndo={undo} />,
       })
-      if (result.next) navigate(`/review/${result.next}`)
-      else onCleared()
+      // Done with this ad: back to the Queue, as Submit goes back to My ads.
+      navigate('/queue')
     } catch (e) {
       message.error(e instanceof ApiError ? e.message : "Couldn't save your decision. Try again.")
     } finally {

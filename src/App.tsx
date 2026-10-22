@@ -1,4 +1,3 @@
-import { Skeleton } from 'antd'
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { PageErrorBoundary } from './app/PageErrorBoundary'
@@ -6,6 +5,7 @@ import { Shell } from './app/Shell'
 import { WorkspaceProvider, useWorkspace } from './app/workspace'
 import { ROLE_LABEL } from './lib/labels'
 import type { Role } from './lib/types'
+import { Loading } from './components/Loading'
 
 // Each page loads when it's first opened, so the first screen arrives sooner.
 const InsightsPage = lazy(() => import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage })))
@@ -54,7 +54,7 @@ function AppRoutes() {
     <Shell>
       <DocumentTitle />
       <PageErrorBoundary key={pathname}>
-      <Suspense fallback={<Skeleton active paragraph={{ rows: 8 }} />}>
+      <Suspense fallback={<Loading text="Loading…" />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/my-ads" element={<ForRole role="marketer"><MyAdsPage /></ForRole>} />
