@@ -147,3 +147,17 @@ def test_applying_a_suggestion_resolves_it_on_the_new_draft(db):
     by_rule = {f["rule_id"]: f for f in draft["findings"] if f["origin"] == "auto"}
     assert by_rule["rate-claims"]["resolved_by_submitter"] is True
     assert by_rule["credit-score-claims"]["resolved_by_submitter"] is False
+
+
+def test_marks_and_notes_survive_the_first_edit(db):
+    actions.decide(db, 2, "changes_required", "Fix it.", NOW) if repo.ad_detail(db, 2)["ad"]["status"] == "pending" else None
+    current = repo.ad_detail(db, 2)["current"]
+    rate = next(f for f in current["findings"] if f["rule_id"] == "rate-claims")
+    actions.update_finding(db, rate["id"], "resolve")
+    actions.update_finding(db, rate["id"], "note", note="Legal signed off.")
+    layers = [{**l, "text": l["text"] + " "} for l in current["layers"]]
+    layers[0]["text"] = current["layers"][0]["text"] + " today"
+    draft = actions.save_copy(db, 2, layers, NOW)
+    copied = next(f for f in draft["findings"] if f["rule_id"] == "rate-claims")
+    assert copied["resolved_by_submitter"] is True and copied["submitter_note"] == "Legal signed off."
+

@@ -88,4 +88,4 @@ Optional: `ANTHROPIC_MODEL` (default `claude-sonnet-5-5`), and `LIVE_CHECKS_PER_
 
 ## Stack
 
-React, TypeScript, Vite and antd on the front end. Flask, libSQL (SQLite locally, Turso in production) and the Anthropic SDK on the server. Vitest, pytest and Playwright for tests.
+React, TypeScript, Vite and antd on the front end. Flask, libSQL (SQLite, locally and on Vercel; Turso also works) and the Anthropic SDK on the server. Vitest, pytest and Playwright for tests.

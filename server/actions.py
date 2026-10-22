@@ -211,8 +211,10 @@ def _working_version(db: Db, ad: dict, create: bool) -> dict | None:
         })
         for f in db.all("SELECT * FROM findings WHERE ad_version_id = ? AND origin = 'auto' AND state != 'dismissed'",
                         (current["id"],)):
+            # The marketer's own marks and notes carry over with the suggestion.
             copy = {k: f[k] for k in ("origin", "rule_id", "severity", "layer_id", "quote", "text", "fix_label",
-                                      "suggested_fix", "position", "created_at")}
+                                      "suggested_fix", "position", "created_at", "resolved_by_submitter",
+                                      "submitter_note")}
             db.insert("findings", {**copy, "ad_version_id": draft_id, "check_run_id": run_id, "state": "open"})
     return db.one("SELECT * FROM ad_versions WHERE id = ?", (draft_id,))
 

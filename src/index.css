@@ -519,14 +519,29 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  line-height: 20px;
+  min-height: 40px;
+  padding: 8px 14px 8px 10px;
+  margin-left: -10px;
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 22px;
   font-weight: 600;
   text-decoration: none;
   color: var(--fp-primary) !important;
 }
 .fp-back-link:hover {
+  background: var(--fp-primary-soft);
   color: var(--fp-primary-hover) !important;
+}
+
+/* The ad stays in view while the list scrolls, only when the two columns sit side by side. */
+@media (min-width: 1200px) {
+  .fp-sticky-panel {
+    position: sticky;
+    top: 24px;
+    max-height: var(--fp-sticky-max, calc(100vh - 48px));
+    overflow-y: auto;
+  }
 }
 
 .fp-version-chip-lg {

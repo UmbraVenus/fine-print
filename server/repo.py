@@ -413,7 +413,7 @@ def insights(db: Db, now: datetime) -> dict:
 
     # Each affiliate publisher's score: the share of its ads approved in round 1.
     publishers = db.all(
-        """SELECT source, COUNT(*) AS n, SUM(current_version = 1) AS first FROM ads
+        """SELECT source, COUNT(*) AS n, SUM(current_version = 1 AND status != 'rejected') AS first FROM ads
            WHERE source != 'internal' AND status IN ('approved', 'approved_with_changes', 'rejected')
              AND closed_at >= ? GROUP BY source""", (iso(start),))
     affiliates = []

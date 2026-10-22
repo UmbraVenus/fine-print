@@ -535,7 +535,7 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
         {/* The ad stays in view while the suggestions scroll; a tall page or email scrolls inside it. */}
         <section
-          className="fp-card"
+          className="fp-card fp-sticky-panel"
           aria-label="Your ad"
           style={{
             flex: '1 1 400px',
@@ -544,10 +544,6 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
             display: 'flex',
             flexDirection: 'column',
             gap: 16,
-            position: 'sticky',
-            top: 24,
-            maxHeight: 'calc(100vh - 48px)',
-            overflowY: 'auto',
           }}
         >
           <AdView

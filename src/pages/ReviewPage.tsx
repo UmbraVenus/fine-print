@@ -278,13 +278,11 @@ function ReviewScreen({ detail, reload, onCleared }: { detail: AdDetail; reload:
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
         {/* The ad stays in view while the findings scroll, as in Pre-check, clear of the decision bar. */}
         <div
+          className="fp-sticky-panel"
           style={{
             flex: '1 1 420px',
             minWidth: 0,
-            position: 'sticky',
-            top: 24,
-            maxHeight: pending ? 'calc(100vh - 136px)' : 'calc(100vh - 48px)',
-            overflowY: 'auto',
+            ['--fp-sticky-max' as string]: pending ? 'calc(100vh - 136px)' : 'calc(100vh - 48px)',
             borderRadius: 12,
           }}
         >

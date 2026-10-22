@@ -81,7 +81,7 @@ export function ViewDrawer() {
 
           {sent.length > 0 && (
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={SECTION_LABEL}>BEFORE IT GOES LIVE</span>
+              <span style={SECTION_LABEL}>{shown.ad.status === 'rejected' ? 'WHY IT WAS REJECTED' : 'BEFORE IT GOES LIVE'}</span>
               {sent.map((finding) => (
                 <div
                   key={finding.id}
