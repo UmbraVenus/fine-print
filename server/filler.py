@@ -12,7 +12,7 @@ from .dates import WORKSPACE_TZ
 from .seed_data import RULES, rule_applies
 
 # Weekly volume of approvals, oldest week first. Week 0 is the last 7 days.
-APPROVED_PER_WEEK = [66, 88, 118, 158, 205, 258, 312, 368, 418]
+APPROVED_PER_WEEK = [7, 9, 12, 16, 21, 26, 31, 37, 44]
 # Average hours from first submission to the decision, oldest week first.
 TURNAROUND_HOURS = [50.0, 38.0, 27.0, 19.0, 13.0, 9.0, 6.5, 5.2, 4.2]
 # Share of ads approved on their first review, oldest week first.
@@ -21,7 +21,7 @@ FIRST_PASS = [0.40, 0.42, 0.44, 0.47, 0.50, 0.54, 0.58, 0.61, 0.64]
 # before Fine Print, about 1.6 now.
 RETURNED_ROUNDS = [5.6, 5.2, 4.6, 4.0, 3.4, 2.9, 2.6, 2.5, 2.4]
 REJECTED_SHARE = 0.03
-AFFILIATE_SHARE = 0.10
+AFFILIATE_SHARE = 0.20  # enough ads per publisher for a steady score at this volume
 # Each affiliate publisher's share of ads approved on first review: the Affiliate compliance score.
 AFFILIATE_FIRST_PASS = {"TotallyLegitLoans.biz": 0.41, "Influencer partner": 0.73,
                         "Loan comparison site": 0.88, "Personal finance blog": 0.92}
@@ -253,6 +253,7 @@ def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) ->
     ad_id = start_ad_id
     weeks = len(APPROVED_PER_WEEK)
     used_names: set[str] = set()
+    affiliate_seen: dict[str, int] = {}
     # Newest week first, so the ads on the first History page get the plainest names.
     for index, approved in reversed(list(enumerate(APPROVED_PER_WEEK))):
         week = weeks - 1 - index
@@ -270,6 +271,11 @@ def generate(now: datetime, formats: dict[str, str], start_ad_id: int = 1000) ->
             submitted = closed - timedelta(hours=hours)
             first_pass_rate = AFFILIATE_FIRST_PASS.get(source, FIRST_PASS[index])
             first_pass = rejected or rng.random() < first_pass_rate
+            if source in AFFILIATE_FIRST_PASS and not rejected:
+                # Few ads per publisher: spread first passes evenly so the score lands on its rate.
+                seen = affiliate_seen.get(source, 0)
+                affiliate_seen[source] = seen + 1
+                first_pass = int((seen + 1) * first_pass_rate + 0.5) > int(seen * first_pass_rate + 0.5)
             template = formats[fmt]
             theme, layers = _layers(rng, template, product, name)
             if rejected:

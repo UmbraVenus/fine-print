@@ -73,7 +73,7 @@ def test_history_has_eight_weeks(db):
     oldest = db.scalar("SELECT MIN(closed_at) FROM ads WHERE status IN ('approved', 'approved_with_changes')")
     assert oldest < (NOW - timedelta(days=56)).strftime("%Y-%m-%dT%H:%M:%SZ")
     affiliate = db.scalar("SELECT AVG(source != 'internal') FROM ads WHERE id >= 1000")
-    assert 0.05 < affiliate < 0.15
+    assert 0.12 < affiliate < 0.25
 
 
 def test_reset_is_repeatable(db):

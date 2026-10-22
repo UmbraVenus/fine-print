@@ -79,10 +79,10 @@ test('go to page: jumps on Enter and refuses a page that does not exist', async 
   await expect(page.getByRole('alert')).toHaveText(`Pick a page from 1 to ${lastPage}`)
   await expect(goTo).toHaveAttribute('aria-invalid', 'true')
   await expect(page.getByText(/^Showing 1–10 of/)).toBeVisible()
-  await goTo.fill('30')
+  await goTo.fill('15')
   await goTo.press('Enter')
-  await expect(page.getByText(/^Showing 291–300 of/)).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Page 30', exact: true })).toHaveAttribute('aria-current', 'page')
+  await expect(page.getByText(/^Showing 141–150 of/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Page 15', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(goTo).toHaveValue('')
 })
 

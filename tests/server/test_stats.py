@@ -26,7 +26,7 @@ def test_queue_stats_agree_with_rows(db):
 def test_history_stats(db):
     stats = by_key(repo.stats(db, "history", NOW))
     approved = stats["approved"]
-    assert approved["value"] > 300
+    assert approved["value"] > 30
     assert approved["trend"]["direction"] == "up" and approved["trend"]["compared_to"] == "vs. 8 weeks ago"
     turnaround = stats["turnaround"]
     assert 2 < turnaround["value"] < 8

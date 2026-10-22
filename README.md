@@ -41,7 +41,7 @@ Ideas we haven't built sit where they'd live, marked "Coming next". Vote for the
 - **Reviewers suggest, marketers change.** A reviewer never edits the ad, so whoever approves the words didn't write them.
 - **Sample ads instead of uploads.** Each ad is text on a template, which is what lets suggestions pin to exact words and fixes happen in one click.
 - **Prepared and live checks.** Sample ads come with their auto check already run. Re-check and Submit run a live check with Claude when an API key is set. The check never blocks Submit or Approve.
-- **The numbers are modeled.** Three reviewers and about 100 ads a week, with faster first reviews and fewer rounds. The sample history follows that ramp, and every number on screen is computed from it.
+- **The numbers are modeled.** Three reviewers and about 45 ads a week, with faster first reviews and fewer rounds. The sample history follows that ramp, and every number on screen is computed from it.
 - **Rule wording is simplified** and isn't legal advice.
 
 Every other decision is in [`BLOCKED.md`](BLOCKED.md); what's built is in [`PROGRESS.md`](PROGRESS.md).
