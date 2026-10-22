@@ -19,6 +19,12 @@ export function prefetch(url: string) {
   api.get(url).then((data) => cache.set(url, data)).catch(() => undefined)
 }
 
+/** Change a cached response in place, so a page shows the result of an action before it refreshes. */
+export function patchCache<T>(url: string, change: (data: T) => T) {
+  const data = cache.get(url) as T | undefined
+  if (data !== undefined) cache.set(url, change(data))
+}
+
 /** After Reset, nothing cached is true any more. */
 export function clearCache() {
   cache.clear()

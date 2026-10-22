@@ -90,11 +90,8 @@ test('full loop: fix, resubmit, what changed, approve, history', async ({ page }
   // 1. The marketer edits Holiday debt email.
   await setRole(page, 'marketer')
   await page.goto('/my-ads')
-  const [precheck] = await Promise.all([
-    page.context().waitForEvent('page'),
-    page.locator('tr', { hasText: 'Holiday debt email' }).getByRole('link', { name: /Pre-check/ }).click(),
-  ])
-  await precheck.waitForLoadState()
+  await page.locator('tr', { hasText: 'Holiday debt email' }).getByRole('link', { name: /Pre-check/ }).click()
+  const precheck = page
   await expect(precheck).toHaveURL(/\/ads\/2\/pre-check$/)
   await expect(precheck.getByRole('heading', { name: 'From your reviewer' })).toBeVisible()
   await expect(precheck.getByText('Add the APR range and say autopay is optional.')).toBeVisible()
@@ -115,7 +112,6 @@ test('full loop: fix, resubmit, what changed, approve, history', async ({ page }
   const row = precheck.locator('tr', { hasText: 'Holiday debt email' })
   await expect(row.getByText('Pending')).toBeVisible()
   await expect(row.getByText('v2')).toBeVisible()
-  await precheck.close()
 
   // 3. The reviewer sees What changed.
   await setRole(page, 'reviewer')

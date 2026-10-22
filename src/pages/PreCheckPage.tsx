@@ -32,6 +32,9 @@ import type { Layer } from '../lib/types'
 import { useMarkSeen } from '../lib/seen'
 import { useApi } from '../lib/useApi'
 import { Loading } from '../components/Loading'
+import { firstUrl } from '../components/AdTable'
+import { patchCache } from '../lib/useApi'
+import type { AdList } from '../lib/types'
 
 const UNAVAILABLE = 'Auto check unavailable right now. You can still submit as usual.'
 
@@ -530,6 +533,13 @@ function PreCheckScreen({ detail, reload }: { detail: AdDetail; reload: () => vo
       const result = await api.post<{ due_date: string; version: number }>(`/api/ads/${ad.id}/submit`)
       // The live check runs after Submit has answered; nobody waits on it.
       void api.post(`/api/ads/${ad.id}/submit-check`).catch(() => undefined)
+      // My ads shows the ad as Pending straight away; the quiet refresh then confirms it.
+      patchCache<AdList>(firstUrl('my-ads'), (list) => ({
+        ...list,
+        rows: list.rows.map((r) =>
+          r.id === ad.id ? { ...r, status: 'pending', current_version: result.version, due_date: result.due_date, updated_at: new Date().toISOString() } : r,
+        ),
+      }))
       refresh()
       message.success(`Sent for review${result.version > 1 ? ` as version ${result.version}` : ''}. Your reviewer takes it from here.`)
       navigate('/my-ads')

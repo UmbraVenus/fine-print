@@ -1,7 +1,7 @@
 import { Button, Checkbox, Input, Select, Table, Tooltip, type TableColumnsType, type TableProps } from 'antd'
 import type { FilterDropdownProps, SorterResult } from 'antd/es/table/interface'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AdThumbnail } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
 import { query } from '../lib/api'
@@ -469,16 +469,16 @@ export function AdTable({
       render: (_, row) => {
         if (view === 'queue') {
           return (
-            <a className="fp-work-button" href={`/review/${row.id}`} target="_blank" rel="noopener" aria-label={`Review ${row.name} (opens in a new tab)`}>
+            <Link className="fp-work-button" to={`/review/${row.id}`} aria-label={`Review ${row.name}`}>
               Review
-            </a>
+            </Link>
           )
         }
         if (row.status === 'draft' || row.status === 'changes_required') {
           return (
-            <a className="fp-work-button" href={`/ads/${row.id}/pre-check`} target="_blank" rel="noopener" aria-label={`Pre-check ${row.name} (opens in a new tab)`}>
+            <Link className="fp-work-button" to={`/ads/${row.id}/pre-check`} aria-label={`Pre-check ${row.name}`}>
               Pre-check
-            </a>
+            </Link>
           )
         }
         return null

@@ -1,5 +1,6 @@
+import { LoadingOutlined } from '@ant-design/icons'
 import { App as AntApp } from 'antd'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AdView, isImageTemplate } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
@@ -19,6 +20,10 @@ import { CompareVersions, WhatChanged, compareMarkers, openItems } from '../revi
 import { compareVersions } from '../review/compare'
 import { YourFindings } from '../review/YourFindings'
 import { Loading } from '../components/Loading'
+import { firstUrl } from '../components/AdTable'
+import { patchCache } from '../lib/useApi'
+import type { AdList } from '../lib/types'
+import type { Finding } from '../lib/detail'
 
 const DONE_LABEL: Record<Decision, string> = {
   approved: 'Approved',
@@ -77,6 +82,7 @@ function DecisionToast({ label, onUndo }: { label: string; onUndo: () => Promise
           void onUndo()
         }}
       >
+        {undoing && <LoadingOutlined aria-hidden="true" style={{ marginRight: 4 }} />}
         {undoing ? 'Undoing…' : 'Undo'}
       </button>
     </span>
@@ -93,7 +99,20 @@ function BackLink() {
 }
 
 function ReviewScreen({ detail, reload }: { detail: AdDetail; reload: () => void }) {
-  const { ad, current, rules } = detail
+  const { ad, rules } = detail
+  // Keep, Edit, Dismiss and Restore show at once; saves go out in order, and the server's copy
+  // replaces this overlay once the last one is in. A failed save drops it, back to what was saved.
+  const [overlay, setOverlay] = useState<Record<number, Partial<Finding>>>({})
+  const queue = useRef<Promise<unknown>>(Promise.resolve())
+  const inFlight = useRef(0)
+  useEffect(() => {
+    if (inFlight.current === 0) setOverlay({})
+  }, [detail])
+  const saved = detail.current
+  const current = useMemo(
+    () => ({ ...saved, findings: saved.findings.map((f) => (overlay[f.id] ? { ...f, ...overlay[f.id] } : f)) }),
+    [saved, overlay],
+  )
   const navigate = useNavigate()
   const { message } = AntApp.useApp()
   const { today, refresh } = useWorkspace()
@@ -143,14 +162,27 @@ function ReviewScreen({ detail, reload }: { detail: AdDetail; reload: () => void
     }
   }
 
-  const findingAction = (id: number, body: Record<string, string>) => run(() => api.post(`/api/findings/${id}`, body))
+  /** Show the change now and save it behind any still going; reload once the last one is in. */
+  const findingAction = (id: number, body: Record<string, string>, shown: Partial<Finding>) => {
+    setOverlay((o) => ({ ...o, [id]: { ...o[id], ...shown } }))
+    inFlight.current += 1
+    const save = queue.current.then(() => api.post(`/api/findings/${id}`, body))
+    queue.current = save.catch(() => undefined)
+    void save
+      .catch((e: unknown) => message.error(e instanceof ApiError ? e.message : "Couldn't save that. Try again."))
+      .finally(() => {
+        inFlight.current -= 1
+        if (inFlight.current === 0) reload()
+      })
+    return Promise.resolve()
+  }
 
   const actions: SuggestionActions = {
-    keep: (id) => void findingAction(id, { action: 'keep' }).catch(() => undefined),
-    unkeep: (id) => void findingAction(id, { action: 'unkeep' }).catch(() => undefined),
-    edit: (id, text) => findingAction(id, { action: 'edit', text }),
-    dismiss: (id, reason) => findingAction(id, { action: 'dismiss', reason }),
-    restore: (id) => void findingAction(id, { action: 'restore' }).catch(() => undefined),
+    keep: (id) => void findingAction(id, { action: 'keep' }, { state: 'kept' }),
+    unkeep: (id) => void findingAction(id, { action: 'unkeep' }, { state: 'open' }),
+    edit: (id, text) => findingAction(id, { action: 'edit', text }, { state: 'edited', edited_text: text }),
+    dismiss: (id, reason) => findingAction(id, { action: 'dismiss', reason }, { state: 'dismissed', dismiss_reason: reason }),
+    restore: (id) => void findingAction(id, { action: 'restore' }, { state: 'open', dismiss_reason: null }),
   }
 
   const selectFromAd = (n: number) => {
@@ -168,7 +200,10 @@ function ReviewScreen({ detail, reload }: { detail: AdDetail; reload: () => void
   const decide = async (decision: Decision, text?: string) => {
     setBusy(true)
     try {
+      await queue.current  // every Keep and Edit is in before the decision goes out
       const result = await api.post<DecisionResult>(`/api/ads/${ad.id}/decision`, { status: decision, message: text })
+      // The Queue no longer lists this ad when it opens; the quiet refresh then confirms it.
+      patchCache<AdList>(firstUrl('queue'), (list) => ({ ...list, rows: list.rows.filter((r) => r.id !== ad.id) }))
       refresh()
       const undo = async () => {
         message.destroy('decision')

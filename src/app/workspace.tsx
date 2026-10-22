@@ -42,7 +42,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [version])
 
-  // Another tab (Review and Pre-check open in new tabs) may change the data, or the role: coming back to
+  // Another tab may change the data, or the role: coming back to
   // this tab refetches, so a decided ad leaves the Queue and a submitted one shows Pending in My ads.
   useEffect(() => {
     const onReturn = () => {
