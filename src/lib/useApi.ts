@@ -7,11 +7,22 @@ interface Result<T> {
   error?: unknown
 }
 
+/** Responses kept for tables, by URL and version, so a page or filter seen before shows at once. */
+const cache = new Map<string, unknown>()
+
+/** Fetch a URL into the cache ahead of time, e.g. the next page. */
+export function prefetch(url: string, version = 0) {
+  const key = `${url}#${version}`
+  if (cache.has(key)) return
+  api.get(url).then((data) => cache.set(key, data)).catch(() => undefined)
+}
+
 /**
- * GET a URL and refetch when it (or `version`) changes. While a new request is in flight,
+ * GET a URL and refetch when it (or `version`) changes. With `cached`, a response seen before shows
+ * at once while it refreshes in the background. While a new request is in flight,
  * the last data stays on screen and `loading` is true.
  */
-export function useApi<T>(url: string | null, version = 0) {
+export function useApi<T>(url: string | null, version = 0, cached = false) {
   const key = `${url}#${version}`
   const [result, setResult] = useState<Result<T> | null>(null)
   const [last, setLast] = useState<T | undefined>(undefined)
@@ -25,14 +36,16 @@ export function useApi<T>(url: string | null, version = 0) {
         if (cancelled) return
         setResult({ key, data })
         setLast(data)
+        if (cached) cache.set(key, data)
       })
       .catch((error: unknown) => !cancelled && setResult({ key, error }))
     return () => {
       cancelled = true
     }
-  }, [url, key])
+  }, [url, key, cached])
 
-  const current = result?.key === key ? result : null
+  const hit = cached ? (cache.get(key) as T | undefined) : undefined
+  const current = result?.key === key ? result : hit !== undefined ? { key, data: hit } : null
   return {
     data: current?.data,
     /** The newest data we have, even if it's for an older URL. */

@@ -6,7 +6,8 @@ import { AdThumbnail } from '../ads/AdView'
 import { useWorkspace } from '../app/workspace'
 import { query } from '../lib/api'
 import { isUpdated } from '../lib/seen'
-import { useApi } from '../lib/useApi'
+import { applyLocal, LOCAL_LIMIT } from '../lib/localTable'
+import { prefetch, useApi } from '../lib/useApi'
 import { dayLabel, daysBetween, shortDate } from '../lib/dates'
 import { PRODUCT_LABEL, STATUS_LABEL, sourceLabel } from '../lib/labels'
 import type { AdList, AdRow, AdStatus, Stat } from '../lib/types'
@@ -264,7 +265,10 @@ export function AdTable({
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<{ key: 'name' | 'date' | 'second' | 'check'; order: 'asc' | 'desc' }>({ key: config.defaultSort ?? 'date', order: config.defaultOrder })
   const [pageSize, setPageSize] = useState(10)
-  const params = query({
+  // Queue and My ads are small: load every row once, then filter, sort and page here, with no wait.
+  // History has thousands of rows, so the server pages it; seen pages are cached and the next one preloaded.
+  const local = view !== 'history'
+  const params = local ? query({ view, page_size: LOCAL_LIMIT }) : query({
     view,
     q,
     format: filters.format,
@@ -276,13 +280,26 @@ export function AdTable({
     page,
     page_size: pageSize,
   })
-  const { latest: data, error, loading } = useApi<AdList>(`/api/ads${params}`, version)
+  const { latest: loaded, error, loading } = useApi<AdList>(`/api/ads${params}`, version, !local)
+  const data = useMemo(() => {
+    if (!loaded || !local) return loaded
+    const shown = applyLocal(loaded.rows, {
+      view: view as 'my-ads' | 'queue', q, format: filters.format, product: filters.product, status: filters.status,
+      dueBy: filters.due.includes('today') ? today : null, sort, page, pageSize,
+    })
+    return { ...loaded, ...shown }
+  }, [loaded, local, view, q, filters, today, sort, page, pageSize])
+
+  useEffect(() => {
+    if (local || !data || page * pageSize >= data.total) return
+    prefetch(`/api/ads${params.replace(/([?&])page=\d+/, `$1page=${page + 1}`)}`, version)
+  }, [local, data, page, pageSize, params, version])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setQ(search)
       onPage(1)
-    }, 250)
+    }, local ? 0 : 250)
     return () => window.clearTimeout(timer)
   }, [search]) // eslint-disable-line react-hooks/exhaustive-deps -- onPage is stable enough; only typing should restart this
 
@@ -490,7 +507,7 @@ export function AdTable({
         rowKey="id"
         columns={columns}
         dataSource={data?.rows ?? []}
-        loading={loading && !data}
+        loading={loading}
         pagination={false}
         onChange={onChange}
         locale={{ emptyText: loading && !data ? ' ' : <div className="fp-table-empty">{empty}</div> }}
