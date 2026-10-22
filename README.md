@@ -4,7 +4,7 @@
 
 Fine Print is a marketing-compliance review tool for ClearPath Financial, a fictional consumer lender. Marketers check their ads before submitting. Reviewers get every ad prepared, with suggestions pinned on the words.
 
-**Try it:** `<your link here>` (the link includes its access key)
+**Try it:** the live link is in the email I sent with this repo (it carries a private access key).
 
 ![Insights](docs/gifs/04-insights.gif)
 
