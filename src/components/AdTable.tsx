@@ -54,17 +54,16 @@ export interface Filters {
 
 export const NO_FILTERS: Filters = { format: [], product: [], status: [], due: [] }
 
-function myAdsSubLine(row: AdRow, today: string): string {
+/** A line under the name only when it adds something the Status and date columns don't. */
+function myAdsSubLine(row: AdRow, today: string): string | null {
   switch (row.status) {
     case 'draft': {
       const parts = [row.critical && `${row.critical} Critical`, row.caution && `${row.caution} Caution`].filter(Boolean)
       return parts.length ? `Pre-check: ${parts.join(', ')}` : 'Pre-check: good standing'
     }
     case 'changes_required':
-      return `${plural(row.sent, 'comment')} from your reviewer`
     case 'pending':
-      // The Due column has the date.
-      return 'With your reviewer'
+      return null
     case 'approved_with_changes':
       return `${plural(row.sent, 'small edit')}, no second review`
     case 'approved':
@@ -278,7 +277,7 @@ export function AdTable({
   onPage: (page: number) => void
 }) {
   const config = VIEWS[view]
-  const { today, version } = useWorkspace()
+  const { role, today, version } = useWorkspace()
   const [, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [q, setQ] = useState('')
@@ -360,16 +359,18 @@ export function AdTable({
                 {row.name}
               </button>
               {row.current_version > 1 && <span className="fp-version-chip">v{row.current_version}</span>}
-              {view !== 'history' && isUpdated(row.id, row.updated_at) && (
+              {view !== 'history' && isUpdated(role, row.id, row.updated_at) && (
                 <span className="fp-updated-chip">
                   <span aria-hidden="true" className="fp-updated-dot" />
                   Updated
                 </span>
               )}
             </span>
-            <span style={{ fontSize: 13, lineHeight: '18px', color: '#4A5468' }}>
-              {view === 'my-ads' ? myAdsSubLine(row, today) : sourceLabel(row.source)}
-            </span>
+            {(view === 'my-ads' ? myAdsSubLine(row, today) : sourceLabel(row.source)) && (
+              <span style={{ fontSize: 13, lineHeight: '18px', color: '#4A5468' }}>
+                {view === 'my-ads' ? myAdsSubLine(row, today) : sourceLabel(row.source)}
+              </span>
+            )}
           </span>
         </div>
       ),

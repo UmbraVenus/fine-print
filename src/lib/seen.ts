@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { Role } from './types'
 
 /**
  * "Updated" marks: what changed since you last opened it, like unread mail. Kept in this browser:
@@ -7,8 +8,7 @@ import { useEffect } from 'react'
 const SINCE_KEY = 'fp_seen_since'
 
 /** Each role has its own marks: a reviewer opening an ad doesn't mean the marketer has seen the change. */
-function seenKey(): string {
-  const role = /(?:^|;\s*)fp_role=marketer/.test(document.cookie) ? 'marketer' : 'reviewer'
+function seenKey(role: Role): string {
   return `fp_seen_${role}`
 }
 
@@ -50,18 +50,21 @@ export function resetSeen() {
 }
 
 /** True when the ad changed after you last opened it (and after your first visit). */
-export function isUpdated(adId: number, updatedAt: string | null | undefined): boolean {
+export function isUpdated(role: Role, adId: number, updatedAt: string | null | undefined): boolean {
   if (!updatedAt) return false
-  const seen = read<Record<string, string>>(seenKey(), {})[adId] ?? since()
+  const seen = read<Record<string, string>>(seenKey(role), {})[adId] ?? since()
   return Date.parse(updatedAt) > Date.parse(seen)
 }
 
-/** Opening an ad marks it seen, now and again whenever it reloads. */
-export function useMarkSeen(adId: number | null, updatedAt: string | null | undefined) {
+/**
+ * Opening an ad marks it seen for the role looking at it, now and whenever it reloads. Pass null until
+ * the loaded data is this page's ad (a page moving to the next ad briefly still holds the last one).
+ */
+export function useMarkSeen(role: Role, adId: number | null, updatedAt: string | null | undefined) {
   useEffect(() => {
     if (adId === null) return
-    const seen = read<Record<string, string>>(seenKey(), {})
+    const seen = read<Record<string, string>>(seenKey(role), {})
     seen[adId] = new Date(Math.max(Date.now(), updatedAt ? Date.parse(updatedAt) : 0)).toISOString()
-    write(seenKey(), seen)
-  }, [adId, updatedAt])
+    write(seenKey(role), seen)
+  }, [role, adId, updatedAt])
 }

@@ -40,10 +40,10 @@ interface CheckResult {
 
 export function PreCheckPage() {
   const adId = Number(useParams().id)
-  const { version } = useWorkspace()
+  const { role, version } = useWorkspace()
   const [reload, setReload] = useState(0)
   const { latest, error } = useApi<AdDetail>(`/api/ads/${adId}`, version * 1000 + reload)
-  useMarkSeen(latest ? latest.ad.id : null, latest?.ad.updated_at)
+  useMarkSeen(role, latest && latest.ad.id === adId ? adId : null, latest?.ad.updated_at)
   const detail = latest && latest.ad.id === adId ? latest : null
 
   if (error instanceof ApiError && error.status === 404) {

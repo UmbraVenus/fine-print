@@ -27,7 +27,7 @@ export function ViewDrawer() {
   const id = Number(params.get('view'))
   const open = Number.isFinite(id) && id > 0
   const { data: detail, error } = useApi<AdDetail>(open ? `/api/ads/${id}` : null, version)
-  useMarkSeen(detail ? detail.ad.id : null, detail?.ad.updated_at)
+  useMarkSeen(role, detail && detail.ad.id === id ? id : null, detail?.ad.updated_at)
   const missing = Boolean(error)
 
   const close = () =>

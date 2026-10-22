@@ -31,7 +31,6 @@ test('my ads: stats agree with the rows', async ({ page }) => {
   await expect(stat(page, 'in_review')).toHaveText('3')
   await expect(page.locator('.fp-ad-link')).toHaveCount(8)
   await expect(page.getByRole('link', { name: /^Pre-check / })).toHaveCount(2)
-  await expect(page.getByText('2 comments from your reviewer')).toBeVisible()
   await expect(page.getByText('Pre-check: 1 Critical, 1 Caution')).toBeVisible()
   await page.screenshot({ path: 'screenshots/m3-my-ads.png', fullPage: true })
 })

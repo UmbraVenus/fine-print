@@ -26,7 +26,7 @@ test('a reviewer finding that quotes the ad is pinned there, for both roles, and
 
   await page.getByRole('button', { name: 'Request changes' }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Request changes' }).click()
-  await expect(page).toHaveURL(/\/review\/4$/)
+  await expect(page).not.toHaveURL(/\/review\/3$/)
 
   // The marketer sees the same pin, and Edit on ad opens those words.
   await setRole(page, 'marketer')

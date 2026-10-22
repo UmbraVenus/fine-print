@@ -72,7 +72,6 @@ test('reviewer requests changes on Fall personal loan', async ({ page }) => {
   await page.goto('/my-ads')
   const row = page.locator('tr', { hasText: 'Fall personal loan' })
   await expect(row.getByText('Changes required')).toBeVisible()
-  await expect(row.getByText('2 comments from your reviewer')).toBeVisible()
 })
 
 test('approve shows Undo, and Undo restores everything', async ({ page }) => {

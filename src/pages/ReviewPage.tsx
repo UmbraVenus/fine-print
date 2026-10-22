@@ -35,11 +35,11 @@ interface DecisionResult {
 export function ReviewPage() {
   const params = useParams()
   const adId = Number(params.id)
-  const { version } = useWorkspace()
+  const { role, version } = useWorkspace()
   const [reload, setReload] = useState(0)
   const [cleared, setCleared] = useState<number | null>(null)
   const { latest, error } = useApi<AdDetail>(`/api/ads/${adId}`, version * 1000 + reload)
-  useMarkSeen(latest ? latest.ad.id : null, latest?.ad.updated_at)
+  useMarkSeen(role, latest && latest.ad.id === adId ? adId : null, latest?.ad.updated_at)
   const detail = latest && latest.ad.id === adId ? latest : null
 
   if (cleared === adId) return <QueueCleared />

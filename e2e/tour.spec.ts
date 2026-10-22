@@ -31,7 +31,6 @@ test('README tour', async ({ page }) => {
   await page.locator('.fp-role-button').click()
   await page.getByRole('menuitem', { name: /Marketer/ }).click()
   await expect(page).toHaveURL(/\/my-ads$/)
-  await expect(page.locator('tr', { hasText: 'Fall personal loan' }).getByText('2 comments from your reviewer')).toBeVisible()
 
   // 5. Fix it and resubmit.
   await page.goto('/ads/3/pre-check')
